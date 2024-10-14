@@ -13,7 +13,7 @@ class PageController extends Controller
 
     public function dashBoard()
     {
-        return view('board.index');
+        return view('dashboard.index');
     }
 
 }
