@@ -10,6 +10,8 @@ Route::get('/', [PageController::class, 'landingPage'])->name('home');
 
 Route::get('auth/github', [LoginController::class, 'redirectToGitHub'])->name('auth.redirect');
 Route::get('auth/github/callback', [LoginController::class, 'handleGitHubCallback']);
+Route::post('auth/github', [LoginController::class, 'gitLogout'])->name('logout');
+
 
 
 Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');

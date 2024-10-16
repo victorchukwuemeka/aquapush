@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class LoginController extends Controller
 {
@@ -13,6 +14,16 @@ class LoginController extends Controller
     {   
         //dd('vic');
         return Socialite::driver('github')->redirect();
+    }
+
+    public function gitLogout(Request $request):RedirectResponse{
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regerateToken();
+
+        return redirect()->route('dashboard');
     }
 
     public function handleGitHubCallBack()
