@@ -12,6 +12,9 @@ Route::get('auth/github', [LoginController::class, 'redirectToGitHub'])->name('a
 Route::get('auth/github/callback', [LoginController::class, 'handleGitHubCallback']);
 Route::post('auth/github', [LoginController::class, 'gitLogout'])->name('logout');
 
+Route::get('login/error', function () {
+    return view('error.login');
+})->name('login-error');
 
 
 Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');

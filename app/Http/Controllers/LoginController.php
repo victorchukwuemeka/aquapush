@@ -21,15 +21,16 @@ class LoginController extends Controller
         Auth::logout();
 
         $request->session()->invalidate();
-        $request->session()->regerateToken();
+        //$request->session()->regerateToken();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('home');
     }
 
     public function handleGitHubCallBack()
     {
         $githubUser = Socialite::driver('github')->stateless()->user();
         
+        //dd($githubUser);
         
         try {
              //find or create user 
@@ -43,11 +44,11 @@ class LoginController extends Controller
                 ]
              );
              Auth::login($user);
-             return redirect()->route('dashboard');
+             return redirect()->route('home');
          
         } catch (\Throwable $e) {
             \Log::error('GitHub login failed: ' . $e->getMessage());
-            return redirect('/login')->with('error', 'Unable to login with GitHub.');
+            return redirect()->route("login-error")->with('error', 'Unable to login with GitHub.');
         }
     }
 }

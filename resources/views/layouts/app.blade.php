@@ -15,7 +15,7 @@
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'laraub') }}</title>
+    <title>{{ config('app.name', 'aquapush') }}</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
@@ -32,7 +32,7 @@
 <body class="min-h-screen font-sans antialiased flex flex-col">
 <!--<div id="app">
 </div>-->
-    @include('layouts.nav2')
+    @include('layouts.nav')
 
  <main class="flex-grow">
      @yield('content')
