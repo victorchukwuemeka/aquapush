@@ -13,15 +13,21 @@
         </nav>
 
         <div class="flex items-center">
-            <a href="{{ route('auth.redirect') }}" class="text-gray-700 hover:text-red-600 transition duration-300 mr-4">
-                {{ __('GitHub login') }}
-            </a>
-            <form action="{{ route('logout') }}" method="POST" class="inline">
-                @csrf
-                <button type="submit" class="text-gray-700 hover:text-red-600 transition duration-300">
-                    Logout
-                </button>
-            </form>
+            @if (Auth::check())
+                <form action="{{ route('logout') }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="text-gray-700 hover:text-red-600 transition duration-300">
+                        Logout
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('auth.redirect') }}" class="text-gray-700 hover:text-red-600 transition duration-300 mr-4">
+                    {{ __('GitHub Rigister') }}
+                </a>
+                <a href="{{ route('auth.login') }}" class="text-gray-700 hover:text-red-600 transition duration-300 mr-4">
+                    {{ __('GitHub Login') }}
+                </a>
+            @endif
         </div>
     </div>
 </header>
