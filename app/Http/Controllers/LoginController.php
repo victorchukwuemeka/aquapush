@@ -26,23 +26,11 @@ class LoginController extends Controller
         return redirect()->route('home');
     }
 
-    public function gitLogin(Request $request): RedirectResponse {
-        $githubUser = Socialite::driver('github')->stateless()->user();
-        try {
-           
-        } catch (\Throwable $th) {
-            //throw $th;
-            \Log::error('GitHub login failed: ' . $th->getMessage());
-            return redirect()->route("login-error")->with('error', 'Unable to login with GitHub.');
-        }
-        
-
-
-    }
-
+    
     public function handleGitHubCallBack(Request $request)
     {
         $githubUser = Socialite::driver('github')->stateless()->user();
+        //dd($githubUser->token);
         
        try { 
             

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class DeploymentController extends Controller
 {
@@ -14,24 +15,31 @@ class DeploymentController extends Controller
 
     public function fetchRepositoryDetails(Request $request)
     {  
-        dd($request);
+        //dd($request);
         
         $request->validate([
             'repository' => 'required|string',
         ]);
-
+        
+        // get the repository which is the user {owner}/{repo_name} 
         $repository = $request->input('repository');
 
+        //$user = Auth::user();
+        //dd($user);
+        
+        //dd(env('GITHUB_TOKEN'));
+        //dd($repository);
         // Fetch repository details from GitHub
         $response = Http::withToken(env('GITHUB_TOKEN'))
             ->get("https://api.github.com/repos/{$repository}");
+        //dd($response);
 
         if ($response->successful()) {
             $repoData = $response->json();
             // Proceed to deploy the application
-            $this->deployToDigitalOcean($repoData);
+            //$this->deployToDigitalOcean($repoData);
 
-            return view('repository-details', compact('repoData'));
+            return view('dashboard.repository-details', compact('repoData'));
         } else {
             return back()->withErrors(['msg' => 'Failed to fetch repository details']);
         }

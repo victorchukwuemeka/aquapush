@@ -1,7 +1,7 @@
-github auth
+github auth = done.
 connecting githubrepository
   *prompt user to input github repository
-  *use the api to fetch repository details .
+  *use the api to fetch repository details = done  .
 select digitalOcean configuration
    *allow user to input there digitalOcean Api token 
    *enable user to select there droplet size.
