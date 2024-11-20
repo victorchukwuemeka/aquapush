@@ -1,13 +1,18 @@
 github auth = done.
+
 connecting githubrepository
   *prompt user to input github repository
   *use the api to fetch repository details = done  .
+
 select digitalOcean configuration
-   *allow user to input there digitalOcean Api token 
-   *enable user to select there droplet size.
+   *allow user to input there digitalOcean Api token = done
+   *enable user to select there droplet size.= done 
 
 deploy the site 
-    *create a droplet using the digitalOcean api and pulling the code from the connected github repository
+    *create a droplet using the digitalOcean api and 
+    pulling the code from the connected github repository = current .
+
+
     *set up ci/cd pipeline for automatic deployment
 
 monitor deployment

@@ -21,7 +21,7 @@ Route::get('login/error', function () {
 })->name('login-error');
 
 
-Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
+//Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
 
 
 
