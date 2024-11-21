@@ -10,10 +10,11 @@ select digitalOcean configuration
 
 deploy the site 
     *create a droplet using the digitalOcean api and 
-    pulling the code from the connected github repository = current .
+    pulling the code from the connected github repository = done .
 
-
-    *set up ci/cd pipeline for automatic deployment
+    *set up ci/cd pipeline for automatic deployment = to solve this readup on git-action,
+       running a command on your droplet from digitalOceanApi ,
+      
 
 monitor deployment
     *provide a realtime update 

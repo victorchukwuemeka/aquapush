@@ -210,4 +210,33 @@ class DigitalOceanController extends Controller
         $newKey = json_decode($response->getBody()->getContents(), true);
         return $newKey['fingerprint'];
     }
+
+    public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
+        $filePath = '.github/workflows/deploy.yml';
+        $commitMessage = "Add CI/CD workflow file for deployment";
+    
+        $url = "https://api.github.com/repos/$repoOwner/$repoName/contents/$filePath";
+    
+        $data = [
+            "message" => $commitMessage,
+            "content" => base64_encode($workflowContent), // GitHub API expects base64 encoding
+            "branch" => "master",
+        ];
+    
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Authorization: token $githubToken",
+            "Accept: application/vnd.github.v3+json",
+            "User-Agent: AquaPush-App"
+        ]);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+        $response = curl_exec($ch);
+        curl_close($ch);
+    
+        return $response ? json_decode($response, true) : false;
+    }
+    
 }
