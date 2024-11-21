@@ -25,13 +25,17 @@ Route::get('login/error', function () {
 
 
 
-Route::get('/dashboard', [DeploymentController::class, 'showDashboard'])->name('dashboard');
-Route::post('/deploy', [DeploymentController::class, 'fetchRepositoryDetails'])->name('deploy');
+Route::get('/dashboard', [DeploymentController::class, 'showDashboard'])
+->name('dashboard');
+Route::post('/deploy', [DeploymentController::class, 'fetchRepositoryDetails'])
+->name('deploy');
 
 
 // Show the DigitalOcean configuration form
-Route::get('/digitalocean/config', [DigitalOceanController::class, 'showForm'])->name('digitalocean.config');
+Route::get('/digitalocean/config', [DigitalOceanController::class, 'showForm'])
+ ->name('digitalocean.config');
 
 // Handle the form submission
-Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])->name('digitalocean.store');
+Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
+->name('digitalocean.store');
 

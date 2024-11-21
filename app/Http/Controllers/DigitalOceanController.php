@@ -36,6 +36,8 @@ class DigitalOceanController extends Controller
             'api_token' => 'required|string',
             'droplet_size' => 'required|string',
         ]);
+         
+        //dd($validatedData);
 
         // Store the token and droplet size in session or database as needed
         // For demonstration, we're using the session
@@ -64,16 +66,20 @@ class DigitalOceanController extends Controller
             'nyc1',        // Customize region
             $validatedData['droplet_size'],
             'ubuntu-20-04-x64', // Use the desired image
-            'victorchukwuemeka/anchor-marketplace',  // Replace with the actual GitHub repo
+            'victorchukwuemeka/aquapush',  // Replace with the actual GitHub repo
             $sshFingerprint
         );
 
+        //dd($droplet);
         return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
     }
 
     public function createDroplet($apiToken, $dropletName, $region, $size, $image, $githubRepo,$ssh_key)
     {
         $client = new Client();
+         
+        //dd($githubRepo);
+        //dd($this->getUserData($githubRepo));
 
         // Send request to DigitalOcean API to create droplet
         $response = $client->post('https://api.digitalocean.com/v2/droplets', [
@@ -91,28 +97,32 @@ class DigitalOceanController extends Controller
                 'user_data' => $this->getUserData($githubRepo),
             ],
         ]);
-
+        
+        //dd($response);
         $body = json_decode($response->getBody()->getContents(), true);
         return $body;
     }
     
     private function getUserData($githubRepo)
     {
-        // Custom user data script to clone the GitHub repo and set up Laravel
+        // Custom user data script to clone the GitHub repo and set up Laravel with Apache2
         return "#!/bin/bash
-        apt-get update -y
-        apt-get install -y git
-        apt-get install -y nginx
-        apt-get install -y php-fpm php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql
-        git clone https://github.com/$githubRepo /var/www/html
-        cd /var/www/html
-        composer install
-        cp .env.example .env
-        php artisan key:generate
-        php artisan migrate
-        systemctl restart nginx
-        systemctl restart php7.4-fpm";
+            apt-get update -y
+            apt-get install -y git
+            apt-get install -y apache2
+            apt-get install -y php libapache2-mod-php php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql
+            cd /var/www/html
+            git clone https://github.com/$githubRepo  
+            composer install
+            cp .env.example .env
+            php artisan key:generate
+            php artisan migrate
+            chown -R www-data:www-data /var/www/html
+            chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+            systemctl enable apache2
+            systemctl restart apache2";
     }
+
 
     private function checkDropletLimit($apiToken)
     {    

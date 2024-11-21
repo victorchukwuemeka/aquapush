@@ -12,6 +12,7 @@ class DeploymentController extends Controller
     {
         return view('dashboard.index');
     }
+    
 
     public function fetchRepositoryDetails(Request $request)
     {  
