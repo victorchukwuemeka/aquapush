@@ -13,11 +13,26 @@ deploy the site
     pulling the code from the connected github repository = done .
 
     *set up ci/cd pipeline for automatic deployment = to solve this readup on git-action,
-       running a command on your droplet from digitalOceanApi ,
-      
+       running a command on your droplet from digitalOceanApi = pending ,
+
+
 
 monitor deployment
-    *provide a realtime update 
-    *offer a log and error message
+   * validating the username/repo = done but error not organized .
+   
+    *provide a realtime update = pending 
+    *offer a log and error message = pending 
     *post a deployment mANAger 
     *enable users to view site metric.  
+
+error handling 
+   * check the github repository to know if it exist 
+
+settup the virtual host
+   *settup up the apache2 so the droplet ip is enough
+   *user should be able to just add he's domain .
+   
+
+
+work flow of an aquapush user .
+

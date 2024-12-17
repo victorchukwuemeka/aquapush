@@ -7,13 +7,24 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
     public function redirectToGitHub()
     {   
-        //dd('vic');
-        return Socialite::driver('github')->redirect();
+        
+        //dd('victor');
+        //login or register with github.
+        try {
+            Log::info('Attempting GitHub login...');
+            return Socialite::driver('github')->redirect();
+        } catch (\Throwable $th) {
+            Log::error('GitHub login failed: ' . $th->getMessage());
+            return redirect()->route('login-error')->with('error', 'GitHub login failed: ' . $th->getMessage());
+        }
+        
+        
     }
 
     public function gitLogout(Request $request):RedirectResponse{
@@ -28,7 +39,9 @@ class LoginController extends Controller
 
     
     public function handleGitHubCallBack(Request $request)
-    {
+    {     
+         //dd('victorsssss');
+        // $githubUser = Socialite::driver('github')->user();
         $githubUser = Socialite::driver('github')->stateless()->user();
         //dd($githubUser->token);
         
@@ -41,7 +54,7 @@ class LoginController extends Controller
             if ($user) {
                 Auth::login($user);
                 $request->session()->regenerate();
-                return redirect()->route('home');
+                return redirect()->route('dashboard');
             }
 
 
@@ -71,9 +84,9 @@ class LoginController extends Controller
                 );
                 Auth::login($user);
             }
-            return redirect()->route('home');
+            return redirect()->route('dashboard');
         } catch (\Throwable $e) {
-            \Log::error('GitHub login failed: ' . $e->getMessage());
+            Log::error('GitHub login failed: ' . $e->getMessage());
             return redirect()->route("login-error")->with('error', 'Unable to login with GitHub.');
         }
     }

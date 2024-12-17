@@ -21,12 +21,7 @@
                     </button>
                 </form>
             @else
-                <a href="{{ route('auth.redirect') }}" class="text-gray-700 hover:text-red-600 transition duration-300 mr-4">
-                    {{ __('GitHub Rigister') }}
-                </a>
-                <a href="{{ route('auth.login') }}" class="text-gray-700 hover:text-red-600 transition duration-300 mr-4">
-                    {{ __('GitHub Login') }}
-                </a>
+                
             @endif
         </div>
     </div>

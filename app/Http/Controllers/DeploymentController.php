@@ -5,67 +5,340 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use GuzzleHttp\Client;
+use App\Models\DigitalOceanDroplet;
+use App\Events\DeploymentStatusUpdated;
+
 
 class DeploymentController extends Controller
-{
-    public function showDashboard()
-    {
-        return view('dashboard.index');
+{   
+    
+    //variable for deployment storage
+    private $store_deployment;
+
+    //available droplet sizes
+    private $dropletSizes = [
+        's-1vcpu-1gb' => 'Basic: 1 vCPU, 1 GB RAM',
+        's-1vcpu-2gb' => 'Standard: 1 vCPU, 2 GB RAM',
+        's-2vcpu-2gb' => 'Standard: 2 vCPU, 2 GB RAM',
+        's-2vcpu-4gb' => 'Standard: 2 vCPU, 4 GB RAM',
+        's-2vcpu-8gb' => 'Standard: 2 vCPU, 8 GB RAM',
+        // Add more sizes as needed
+    ];
+     
+    // Available regions
+    private $regions = [
+        'nyc1' => 'New York 1',
+        'sfo2' => 'San Francisco 2',
+        'ams3' => 'Amsterdam 3',
+    ];
+
+    // Available images for your vm 
+    private $images = [
+        'ubuntu-20-04-x64' => 'Ubuntu 20.04 (x64)',
+        'centos-7-x64' => 'CentOS 7 (x64)',
+        'debian-11-x64' => 'Debian 11 (x64)',
+    ];
+
+
+    public function index(){
+        
+        return view('deploy.create');
     }
     
-
-    public function fetchRepositoryDetails(Request $request)
-    {  
-        //dd($request);
+    public function create()
+    {
+        $api_token = session('digitalocean.api_token');
+        $droplet_size = session('digitalocean.droplet_size');
         
-        $request->validate([
+        return view('deploy.create', [
+            'dropletSizes' => $this->dropletSizes,
+            'regions' => $this->regions,
+            'images' => $this->images,
+            'api_token' => $api_token,
+            'droplet_size' => $droplet_size,
+        ]);
+    }
+
+    public function store(Request $request){
+         //dd($request->input('api_token'));
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'api_token' => 'required|string',
+            'droplet_size' => 'required|string',
             'repository' => 'required|string',
+            'region' => 'required|string',
+            'image' => 'required|string',
+            'droplet_name' => 'required|string',
+        ]);
+
+        //dd($validatedData['repository']);
+        //validate laravel repo
+        if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
+             //storing the droplet in my db so it can be tracked .
+             $this->store_deployment  = DigitalOceanDroplet::create([
+                'user_id' => Auth::user()->id,
+                'api_token' => $validatedData['api_token'],
+                'droplet_size' => $validatedData['droplet_size'],
+                'repository' => $validatedData['repository'],
+                'region' => $validatedData['region'],
+                'image' => $validatedData['image'],
+                'droplet_name' => $validatedData['droplet_name'],
+                'status' => 'pending',
+            ]);
+        }
+       
+
+        //dd($validatedData);
+        // Store the token and droplet size in session or database as needed
+        // For demonstration, we're using the session
+        session([
+            'digitalocean.api_token' => $validatedData['api_token'],
+            'digitalocean.droplet_size' => $validatedData['droplet_size'],
+        ]);
+
+         // Check droplet limit
+         $dropletLimitCheck = $this->checkDropletLimit($validatedData['api_token']);
+         if ($dropletLimitCheck['status'] === 'error') {
+             return redirect()->route('digitalocean.config')->with('error', $dropletLimitCheck['message']);
+         }
+
+         // Check if the SSH key exists or add it
+         $sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
+        
+        //confirm its a laravel repo before creating a droplet
+        if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
+            // Call the method to create the droplet
+            $droplet = $this->createDroplet(
+                $validatedData['api_token'],
+                $validatedData['droplet_name'], 
+                $validatedData['region'],
+                $validatedData['droplet_size'],
+                $validatedData['image'], 
+                $validatedData['repository'],
+                $sshFingerprint
+            );
+            $this->start_deployment($this->store_deployment);
+            return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
+        }
+        
+        
+        
+    }
+
+    public function start_deployment($store_deployment){
+        
+        // Ensure the deployment object exists
+        if (!$store_deployment) {
+            // Handle the case where the deployment doesn't exist
+            // For example, throw an exception or return a response
+            return response()->json(['error' => 'Deployment not found'], 404);
+        }
+        $store_deployment->update(['status' => 'In Progress']);
+        event(new DeploymentStatusUpdated($store_deployment));
+        
+        sleep(2);
+        $store_deployment->update(['status' => 'Completed']);
+        event(new DeploymentStatusUpdated($store_deployment));
+    }
+
+
+
+    public function get_deployment_status($id){
+        $store_deployment_status = DigitalOceanDroplet::findOrFail($id);
+        return response()->json(['status' => $store_deployment_status->status]);
+    }
+    
+    public function createDroplet($apiToken, $dropletName, $region, $size, $image, $githubRepo,$ssh_key)
+    {
+        $client = new Client();
+         
+        //dd($githubRepo);
+        //dd($this->getUserData($githubRepo));
+
+        // Send request to DigitalOcean API to create droplet
+        $response = $client->post('https://api.digitalocean.com/v2/droplets', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $apiToken,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'name' => $dropletName,
+                'region' => $region,
+                'size' => $size,
+                'image' => $image,  // Example: 'ubuntu-20-04-x64'
+                'ssh_keys' => $ssh_key,
+                'backups' => false,
+                'user_data' => $this->getUserData($githubRepo),
+            ],
         ]);
         
-        // get the repository which is the user {owner}/{repo_name} 
-        $repository = $request->input('repository');
-
-        //$user = Auth::user();
-        //dd($user);
-        
-        //dd(env('GITHUB_TOKEN'));
-        //dd($repository);
-        // Fetch repository details from GitHub
-        $response = Http::withToken(env('GITHUB_TOKEN'))
-            ->get("https://api.github.com/repos/{$repository}");
         //dd($response);
-
-        if ($response->successful()) {
-            $repoData = $response->json();
-            // Proceed to deploy the application
-            //$this->deployToDigitalOcean($repoData);
-
-            return view('dashboard.repository-details', compact('repoData'));
-        } else {
-            return back()->withErrors(['msg' => 'Failed to fetch repository details']);
-        }
+        $body = json_decode($response->getBody()->getContents(), true);
+        return $body;
     }
 
-    protected function deployToDigitalOcean($repoData)
+
+    public function check_if_repo_is_laravel($repo): bool
+    {    
+        //split the repo string .
+        [$username , $repo_name] = explode('/', $repo);
+
+        //list branches 
+        $branches = ['master', 'main'];
+
+        foreach($branches as $branch){
+
+            $url = "https://raw.githubusercontent.com/$username/$repo_name/$branch/composer.json";
+            try {
+                $composer_json_content = @file_get_contents($url);
+                if ($composer_json_content) {
+                    $composer_data = json_decode($composer_json_content, true);
+                    if (isset($composer_data['require']['laravel/framework'])) {
+                        return true;
+                    }
+                }
+            } catch (\Throwable $th) {
+                continue;
+            }
+        }
+        return false;
+    }
+    
+    private function getUserData($githubRepo)
     {
-        // Deploy to DigitalOcean using API
-        $response = Http::withToken(env('DIGITALOCEAN_TOKEN'))
-            ->post('https://api.digitalocean.com/v2/droplets', [
-                'name' => $repoData['name'],
-                'region' => 'nyc3',  // Specify your region
-                'size' => 's-1vcpu-1gb',  // Choose droplet size
-                'image' => 'ubuntu-20-04-x64',  // Specify the image
-                'ssh_keys' => [env('SSH_KEY_ID')],  // Add your SSH key
-                'backups' => false,
-                'ipv6' => true,
-                // 'user_data' => $yourScriptToCloneRepoAndSetupLaravel,  // Optional script
-            ]);
-
-        // Check response and handle accordingly
-        if ($response->successful()) {
-            // Handle successful deployment
-        } else {
-            // Handle error
-        }
+        // Custom user data script to clone the GitHub repo and set up Laravel with Apache2
+        return "#!/bin/bash
+            apt-get update -y
+            apt-get install -y git
+            apt-get install -y apache2
+            apt-get install -y php libapache2-mod-php php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql
+            cd /var/www/html
+            git clone https://github.com/$githubRepo  
+            composer install
+            cp .env.example .env
+            php artisan key:generate
+            php artisan migrate
+            chown -R www-data:www-data /var/www/html
+            chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+            systemctl enable apache2
+            systemctl restart apache2";
     }
+
+    private function checkDropletLimit($apiToken)
+    {    
+        //dd($apiToken);
+        //try {
+            $client = new Client();
+            //dd($client);
+            $response = $client->get('https://api.digitalocean.com/v2/account', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiToken,
+                ],
+            ]);
+            //dd($response);
+            $data = json_decode($response->getBody()->getContents(), true);
+            $dropletLimit = $data['account']['droplet_limit'];
+
+            //dd($dropletLimit);
+            //dd($data['account']['droplet_count']);
+            // Step 2: Get the current number of droplets
+            $dropletsResponse = $client->get('https://api.digitalocean.com/v2/droplets', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiToken,
+                ],
+            ]);
+            
+            
+            $dropletsData = json_decode($dropletsResponse->getBody()->getContents(), true);
+            $dropletCount = count($dropletsData['droplets']);
+
+            
+            //dd($dropletsData);
+            
+            if ($dropletCount >= $dropletLimit) {
+                return [
+                    'status' => 'error',
+                    'message' => 'You have reached your droplet creation limit. Please delete some droplets or contact DigitalOcean support.'
+                ];
+            }
+            
+            return ['status' => 'success'];
+        /*} catch (\Exception $e) {
+            // Handle error (e.g., API rate limit exceeded, network error)
+            return [
+                'status' => 'error',
+                'message' => 'An error occurred while checking your droplet limit. Please try again later.'
+            ];
+        }*/
+    }
+
+    //auto create sshkey
+    private function getOrCreateSSHKey($apiToken)
+    {
+        $client = new Client();
+        $sshKeyName = 'Default SSH Key for Users';
+        $publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzp/ztFkVR4oF/QBhuHfwcVr8coqr8kGAv35WdjoM0EIAWETNWCDbLQkljI4HtO2RnAIyxt6mSeyHmg4++9CdVv5uenQ5sSdx1BStZWH3XhuT6pJ+OTqavP8qehgQSZUQ2+uBkahMSxMpVr7Av/LM7a/dLS2j58sta8ywabwhk9zPLqJ+dUpgHDdRfltlRiMG3GMKwWiU/HvEU3Ys4Pnbq+QrJasIE0x8TtE1yzAP1VKd8nTwVKi21yPVNz6zQjnEl1tAjVbUS3AzOtJt/6f/PucZUGH1eHMlM89uwSTc2UpKLuYDEGJle3Yv081EOqeAB3WR0GycNwvSL2LqVtUKoM4ohIXZJ0zxhlnwc7WHg8ZnI6zick8+j8/7XFi141mRzylZrIzcTH27Qsb3z2tizyZB5Kt7zYJ9eDnNAmn961knHcUF74cNgOdTRgMH8AGYabjdqngupuHBmBEiahMg9vrj2RP5PgksjDFnWKQrhaezFs+dp6Jv/aGfiZDhDpVM= victor@victor-Latitude-3380';
+
+        // Check for existing SSH keys
+        $response = $client->get('https://api.digitalocean.com/v2/account/keys', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $apiToken,
+            ],
+        ]);
+
+        $sshKeys = json_decode($response->getBody()->getContents(), true)['ssh_keys'];
+
+        // Find an existing key with the same name
+        foreach ($sshKeys as $key) {
+            if ($key['public_key'] === $publicKey) {
+                return $key['fingerprint'];
+            }
+        }
+
+        // Add new SSH key if not found
+        $response = $client->post('https://api.digitalocean.com/v2/account/keys', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $apiToken,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'name' => $sshKeyName,
+                'public_key' => $publicKey,
+            ],
+        ]);
+
+        $newKey = json_decode($response->getBody()->getContents(), true);
+        return $newKey['fingerprint'];
+    }
+    
+    public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
+        $filePath = '.github/workflows/deploy.yml';
+        $commitMessage = "Add CI/CD workflow file for deployment";
+    
+        $url = "https://api.github.com/repos/$repoOwner/$repoName/contents/$filePath";
+    
+        $data = [
+            "message" => $commitMessage,
+            "content" => base64_encode($workflowContent), // GitHub API expects base64 encoding
+            "branch" => "master",
+        ];
+    
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Authorization: token $githubToken",
+            "Accept: application/vnd.github.v3+json",
+            "User-Agent: AquaPush-App"
+        ]);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+        $response = curl_exec($ch);
+        curl_close($ch);
+    
+        return $response ? json_decode($response, true) : false;
+    }
+   
+
 }

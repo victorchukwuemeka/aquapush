@@ -13,5 +13,9 @@
     },
     "engines": {
         "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "laravel-echo": "^1.17.1",
+        "pusher-js": "^8.4.0-rc2"
     }
 }
