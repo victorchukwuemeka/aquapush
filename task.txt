@@ -1,32 +1,16 @@
-github auth = done.
-
-connecting githubrepository
-  *prompt user to input github repository
-  *use the api to fetch repository details = done  .
-
-select digitalOcean configuration
-   *allow user to input there digitalOcean Api token = done
-   *enable user to select there droplet size.= done 
-
 deploy the site 
-    *create a droplet using the digitalOcean api and 
-    pulling the code from the connected github repository = done .
-
     *set up ci/cd pipeline for automatic deployment = to solve this readup on git-action,
        running a command on your droplet from digitalOceanApi = pending ,
 
 
 
 monitor deployment
-   * validating the username/repo = done but error not organized .
-   
+
     *provide a realtime update = pending 
     *offer a log and error message = pending 
     *post a deployment mANAger 
     *enable users to view site metric.  
 
-error handling 
-   * check the github repository to know if it exist 
 
 settup the virtual host
    *settup up the apache2 so the droplet ip is enough

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('region')->nullable();
             $table->string('repository');
             $table->string('image')->nullable();
-            $table->enum('status', ['Pending', 'In Progress', 'Completed', 'Failed'])->default('Pending');
+            $table->enum('status', ['pending', 'inprogress', 'active', 'failed'])->default('Pending');
             $table->timestamps();
         });
     }

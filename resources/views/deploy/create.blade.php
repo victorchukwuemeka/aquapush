@@ -2,16 +2,15 @@
 
 @section('content')
 <div class="container mx-auto py-10">
-    <h1 class="text-3xl font-bold text-red-600 mb-6">
+    <h1 class="text-3xl font-bold text-red-600 mb-8 text-center">
         Deploy a New Application
     </h1>
 
-    
-    <p class="text-gray-700 mb-8">
-        Fill in the details below to set up and deploy your Laravel application to DigitalOcean.
+    <p class="text-gray-700 mb-10 text-center">
+        Provide the necessary details below to set up and deploy your Laravel application to DigitalOcean.
     </p>
 
-    <form action="{{ route('deploy.store') }}" method="POST">
+    <form action="{{ route('deploy.store') }}" method="POST" class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
         @csrf
 
         <!-- GitHub Repository -->
@@ -44,9 +43,9 @@
         </div>
 
         <!-- DigitalOcean Region -->
-        <div class="mb-4">
-            <label for="region" class="block text-gray-700 text-sm font-bold mb-2">Select Region:</label>
-            <select name="region" id="region" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <div class="mb-6">
+            <label for="region" class="block text-gray-700 font-medium mb-2">Select Region</label>
+            <select name="region" id="region" required class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600">
                 <option value="">-- Select Region --</option>
                 @foreach($regions as $region => $description)
                     <option value="{{ $region }}">{{ $description }}</option>
@@ -55,9 +54,9 @@
         </div>
 
         <!-- DigitalOcean Droplet Size -->
-        <div class="mb-4">
-            <label for="droplet_size" class="block text-gray-700 text-sm font-bold mb-2">Select Droplet Size:</label>
-            <select name="droplet_size" id="droplet_size" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <div class="mb-6">
+            <label for="droplet_size" class="block text-gray-700 font-medium mb-2">Select Droplet Size</label>
+            <select name="droplet_size" id="droplet_size" required class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600">
                 <option value="">-- Select Droplet Size --</option>
                 @foreach($dropletSizes as $size => $description)
                     <option value="{{ $size }}">{{ $description }}</option>
@@ -79,9 +78,9 @@
         </div>
 
         <!-- Desired Image -->
-        <div class="mb-4">
-            <label for="image" class="block text-gray-700 text-sm font-bold mb-2">Select Desired Image:</label>
-            <select name="image" id="image" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        <div class="mb-6">
+            <label for="image" class="block text-gray-700 font-medium mb-2">Select Desired Image</label>
+            <select name="image" id="image" required class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600">
                 <option value="">-- Select Image --</option>
                 @foreach($images as $imageId => $imageDescription)
                     <option value="{{ $imageId }}">{{ $imageDescription }}</option>
@@ -90,7 +89,7 @@
         </div>
 
         <!-- Submit Button -->
-        <div class="text-center">
+        <div class="text-center mt-8">
             <button
                 type="submit"
                 class="bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition duration-300 ease-in-out shadow-md"
@@ -99,13 +98,14 @@
             </button>
         </div>
     </form>
-    <div id="status-container" class="p-6 border rounded-lg shadow-lg">
-        <h2 class="font-bold text-xl text-red-600 mb-2">Deployment Status</h2>
-        <p id="deployment-status" class="text-gray-600">Waiting for updates...</p>
+
+    <!-- Deployment Status -->
+    <div id="status-container" class="mt-10 max-w-3xl mx-auto p-6 border rounded-lg shadow-md bg-gray-50">
+        <h2 class="font-bold text-xl text-red-600 mb-4 text-center">Deployment Status</h2>
+        <p id="deployment-status" class="text-gray-700 text-center">Waiting for updates...</p>
     </div>
-    
-    
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/pusher-js"></script>
 <script>
     const userId = {{ auth()->id() }};

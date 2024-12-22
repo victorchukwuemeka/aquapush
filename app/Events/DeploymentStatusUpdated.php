@@ -23,6 +23,7 @@ class DeploymentStatusUpdated implements ShouldBroadcast
     public function __construct(DigitalOceanDroplet $deployment)
     {
         $this->deployment = $deployment;
+        
     }
 
     /**

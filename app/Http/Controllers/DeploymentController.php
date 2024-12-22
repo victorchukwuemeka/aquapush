@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use GuzzleHttp\Client;
 use App\Models\DigitalOceanDroplet;
 use App\Events\DeploymentStatusUpdated;
-
+use Illuminate\Support\Facades\Log;
 
 class DeploymentController extends Controller
 {   
@@ -60,44 +60,28 @@ class DeploymentController extends Controller
         ]);
     }
 
-    public function store(Request $request){
-         //dd($request->input('api_token'));
+    public function deploy(Request $request){
+         
         // Validate the incoming request data
-        $validatedData = $request->validate([
-            'api_token' => 'required|string',
-            'droplet_size' => 'required|string',
-            'repository' => 'required|string',
-            'region' => 'required|string',
-            'image' => 'required|string',
-            'droplet_name' => 'required|string',
-        ]);
+        $validatedData = $this->validateDeploymentData($request);
 
-        //dd($validatedData['repository']);
-        //validate laravel repo
+        
+        //check if it's a laravel repo and store in the database.
         if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
              //storing the droplet in my db so it can be tracked .
-             $this->store_deployment  = DigitalOceanDroplet::create([
-                'user_id' => Auth::user()->id,
-                'api_token' => $validatedData['api_token'],
-                'droplet_size' => $validatedData['droplet_size'],
-                'repository' => $validatedData['repository'],
-                'region' => $validatedData['region'],
-                'image' => $validatedData['image'],
-                'droplet_name' => $validatedData['droplet_name'],
-                'status' => 'pending',
-            ]);
+            $this->store_deployment = $this->storeDeployment($validatedData);
         }
-       
+    
 
-        //dd($validatedData);
-        // Store the token and droplet size in session or database as needed
+        
+        // Store the token and droplet size in session  as needed
         // For demonstration, we're using the session
         session([
             'digitalocean.api_token' => $validatedData['api_token'],
             'digitalocean.droplet_size' => $validatedData['droplet_size'],
         ]);
 
-         // Check droplet limit
+         // Check droplet limit so yu will not push more droplet.
          $dropletLimitCheck = $this->checkDropletLimit($validatedData['api_token']);
          if ($dropletLimitCheck['status'] === 'error') {
              return redirect()->route('digitalocean.config')->with('error', $dropletLimitCheck['message']);
@@ -118,43 +102,78 @@ class DeploymentController extends Controller
                 $validatedData['repository'],
                 $sshFingerprint
             );
-            $this->start_deployment($this->store_deployment);
+            //$this->pollDropletStatus($validatedData['api_token'],)
+            //$this->start_deployment($this->store_deployment);
             return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
+        }else{
+            return redirect()->route('error-not-laravel');
         }
         
-        
-        
+    }
+    
+    
+    /**
+     * function used for storing the deployment in our database.
+     */
+    private function storeDeployment($validatedData)
+    {
+        return  DigitalOceanDroplet::create([
+            'user_id' => Auth::user()->id,
+            'api_token' => $validatedData['api_token'],
+            'droplet_size' => $validatedData['droplet_size'],
+            'repository' => $validatedData['repository'],
+            'region' => $validatedData['region'],
+            'image' => $validatedData['image'],
+            'droplet_name' => $validatedData['droplet_name'],
+            'status' => 'pending',
+        ]);
+    }
+    
+    
+    /**
+     * function used for validating the request, from the 
+     * deployment form.
+     */
+    private function validateDeploymentData($data){
+        return $data->validate([
+            'api_token' => 'required|string',
+            'droplet_size' => 'required|string',
+            'repository' => 'required|string',
+            'region' => 'required|string',
+            'image' => 'required|string',
+            'droplet_name' => 'required|string',
+        ]);
     }
 
-    public function start_deployment($store_deployment){
-        
+    //start monitorig the deployment.
+    /*public function start_deployment($store_deployment){
         // Ensure the deployment object exists
         if (!$store_deployment) {
             // Handle the case where the deployment doesn't exist
             // For example, throw an exception or return a response
             return response()->json(['error' => 'Deployment not found'], 404);
         }
-        $store_deployment->update(['status' => 'In Progress']);
+        $store_deployment->update(['status' => 'inprogress']);
         event(new DeploymentStatusUpdated($store_deployment));
         
         sleep(2);
-        $store_deployment->update(['status' => 'Completed']);
+        $store_deployment->update(['status' => 'active']);
         event(new DeploymentStatusUpdated($store_deployment));
-    }
+    }*/
 
 
-
+    //getting the deployment status.
     public function get_deployment_status($id){
         $store_deployment_status = DigitalOceanDroplet::findOrFail($id);
         return response()->json(['status' => $store_deployment_status->status]);
     }
     
-    public function createDroplet($apiToken, $dropletName, $region, $size, $image, $githubRepo,$ssh_key)
-    {
+    //handles creating of droplet in the digitalOcean .
+    public function createDroplet(
+        $apiToken, $dropletName, $region,
+        $size, $image, $githubRepo,$ssh_key
+    ){
         $client = new Client();
-         
-        //dd($githubRepo);
-        //dd($this->getUserData($githubRepo));
 
         // Send request to DigitalOcean API to create droplet
         $response = $client->post('https://api.digitalocean.com/v2/droplets', [
@@ -172,13 +191,66 @@ class DeploymentController extends Controller
                 'user_data' => $this->getUserData($githubRepo),
             ],
         ]);
-        
-        //dd($response);
+
+        //get the details of your droplet.
         $body = json_decode($response->getBody()->getContents(), true);
-        return $body;
+        $dropletId = $body['droplet']['id'];
+        
+        // Save droplet ID to track status
+        $this->store_deployment->update(['droplet_id' => $dropletId, 'status' => 'inprogress']);
+    
+        // Poll droplet status periodically
+        $this->pollDropletStatus($apiToken, $dropletId);   
+    }
+    
+
+    /**
+     * using the deployment status to monitor it .
+     */
+    public function pollDropletStatus($apiToken, $dropletId){
+        $client = new Client();
+        $status = '';
+        $attempt = 0;
+
+        while ($attempt < 10 && $status !== 'active') {
+            $attempt++;
+
+            // Get droplet details from DigitalOcean API
+            $response = $client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}", [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiToken,
+                    'Content-Type' => 'application/json',
+                ]
+            ]);
+
+
+            $body = json_decode($response->getBody()->getContents(), true);
+            $status = $body['droplet']['status'];
+
+           // dd($body);
+            //LOg stats
+            Log::info('Droplet Status'.$status);
+
+            //if droplet is active update 
+            if ($status === 'active') {
+                $this->store_deployment->update(['status' => 'active']);
+                break;
+            }
+            
+            // Wait for some time before checking again
+            sleep(10);
+        }
+
+        if ($status !== 'active') {
+            Log::error('Droplet creation failed after multiple attempts.');
+            $this->store_deployment->update(['status' => 'failed']);
+        }
+
     }
 
+    
 
+    //making sure the repo a laravel project .
     public function check_if_repo_is_laravel($repo): bool
     {    
         //split the repo string .
@@ -207,24 +279,76 @@ class DeploymentController extends Controller
     
     private function getUserData($githubRepo)
     {
-        // Custom user data script to clone the GitHub repo and set up Laravel with Apache2
-        return "#!/bin/bash
-            apt-get update -y
-            apt-get install -y git
-            apt-get install -y apache2
-            apt-get install -y php libapache2-mod-php php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql
-            cd /var/www/html
-            git clone https://github.com/$githubRepo  
-            composer install
-            cp .env.example .env
-            php artisan key:generate
-            php artisan migrate
-            chown -R www-data:www-data /var/www/html
-            chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-            systemctl enable apache2
-            systemctl restart apache2";
+        // Validate and sanitize GitHub repository input
+        $repoName = escapeshellarg($githubRepo);
+    
+        return <<<BASH
+    #!/bin/bash
+    set -e  # Exit immediately if a command exits with a non-zero status
+    LOGFILE='/var/log/deployment.log'
+    
+    exec > >(tee -a \$LOGFILE) 2>&1  # Log all output to file
+    
+    {
+        echo 'Starting deployment process...'
+    
+        # Update and install dependencies
+        apt-get update -y
+        apt-get install -y git
+        apt-get install -y apache2
+        apt-get install -y php libapache2-mod-php php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql composer
+    
+        # Clone the GitHub repo
+        cd /var/www/html
+        git clone https://github.com/$repoName
+        cd \$(basename $repoName .git)  # Change directory to the cloned repo
+    
+        # Install composer dependencies
+        composer install
+    
+        # Set up .env file
+        cp .env.example .env
+        php artisan key:generate
+        php artisan migrate --force
+    
+        # Set file permissions
+        chown -R www-data:www-data /var/www/html
+        chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+    
+        # Apache setup
+        cat <<EOL > /etc/apache2/sites-available/laravel-app.conf
+    <VirtualHost *:80>
+        ServerAdmin admin@example.com
+        DocumentRoot /var/www/html/\$(basename $repoName .git)/public
+        <Directory /var/www/html/\$(basename $repoName .git)/public>
+            Options Indexes FollowSymLinks
+            AllowOverride All
+            Require all granted
+        </Directory>
+        ErrorLog \${APACHE_LOG_DIR}/laravel-app-error.log
+        CustomLog \${APACHE_LOG_DIR}/laravel-app-access.log combined
+    </VirtualHost>
+    EOL
+    
+        # Enable Apache site and modules
+        a2ensite laravel-app
+        a2enmod rewrite
+    
+        # Restart Apache to apply changes
+        systemctl restart apache2
+    
+        echo 'Deployment completed successfully.'
+    } || {
+        echo 'Deployment failed. Check \$LOGFILE for details.'
+        exit 1
     }
+    BASH;
+    }
+    
 
+
+ 
+    //handling the amount of droplet in digitalOcean 
     private function checkDropletLimit($apiToken)
     {    
         //dd($apiToken);
@@ -273,7 +397,11 @@ class DeploymentController extends Controller
         }*/
     }
 
-    //auto create sshkey
+
+    /**
+     * this function gets your sshkey ifyou have one or 
+     * help you create one if you don't.
+     */
     private function getOrCreateSSHKey($apiToken)
     {
         $client = new Client();
@@ -311,7 +439,10 @@ class DeploymentController extends Controller
         $newKey = json_decode($response->getBody()->getContents(), true);
         return $newKey['fingerprint'];
     }
-    
+
+
+
+    //all about CI/CD
     public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
         $filePath = '.github/workflows/deploy.yml';
         $commitMessage = "Add CI/CD workflow file for deployment";

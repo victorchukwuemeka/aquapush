@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class DigitalOceanDroplet extends Model
 {
     use HasFactory;
+    
+    protected  $table = 'digital_ocean_droplet';
 
     protected $fillable = [
         'user_id',
@@ -19,5 +21,13 @@ class DigitalOceanDroplet extends Model
         'region',
         'status',
     ];
+
+    public function get_id(){
+        return $this->attributes['status'];
+    }
+  
+    public function set_id($status){
+        $this->attributes['status'] = $status;
+    }
 
 }
