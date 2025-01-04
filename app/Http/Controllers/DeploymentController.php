@@ -39,7 +39,10 @@ class DeploymentController extends Controller
         'centos-7-x64' => 'CentOS 7 (x64)',
         'debian-11-x64' => 'Debian 11 (x64)',
     ];
-
+     
+    public function ssh(){
+        return view('deploy.ssh-key-get');
+    }
 
     public function index(){
         
@@ -61,7 +64,7 @@ class DeploymentController extends Controller
     }
 
     public function deploy(Request $request){
-         
+         dd($request);
         // Validate the incoming request data
         $validatedData = $this->validateDeploymentData($request);
 
@@ -88,7 +91,7 @@ class DeploymentController extends Controller
          }
 
          // Check if the SSH key exists or add it
-         $sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
+         //$sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
         
         //confirm its a laravel repo before creating a droplet
         if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
@@ -100,7 +103,7 @@ class DeploymentController extends Controller
                 $validatedData['droplet_size'],
                 $validatedData['image'], 
                 $validatedData['repository'],
-                $sshFingerprint
+                $validatedData['ssh_key']
             );
             //$this->pollDropletStatus($validatedData['api_token'],)
             //$this->start_deployment($this->store_deployment);
@@ -137,6 +140,7 @@ class DeploymentController extends Controller
     private function validateDeploymentData($data){
         return $data->validate([
             'api_token' => 'required|string',
+            'ssh_key' => 'required|string',
             'droplet_size' => 'required|string',
             'repository' => 'required|string',
             'region' => 'required|string',
@@ -170,8 +174,13 @@ class DeploymentController extends Controller
     
     //handles creating of droplet in the digitalOcean .
     public function createDroplet(
-        $apiToken, $dropletName, $region,
-        $size, $image, $githubRepo,$ssh_key
+        $apiToken, 
+        $dropletName, 
+        $region,
+        $size, 
+        $image, 
+        $githubRepo,
+        $ssh_key
     ){
         $client = new Client();
 
@@ -188,7 +197,7 @@ class DeploymentController extends Controller
                 'image' => $image,  // Example: 'ubuntu-20-04-x64'
                 'ssh_keys' => $ssh_key,
                 'backups' => false,
-                'user_data' => $this->getUserData($githubRepo),
+                //'user_data' => $this->getUserData($githubRepo),
             ],
         ]);
 
@@ -277,7 +286,7 @@ class DeploymentController extends Controller
         return false;
     }
     
-    private function getUserData($githubRepo)
+    /*private function getUserData($githubRepo)
     {
         // Validate and sanitize GitHub repository input
         $repoName = escapeshellarg($githubRepo);
@@ -331,6 +340,7 @@ class DeploymentController extends Controller
     EOL
     
         # Enable Apache site and modules
+        a2dissite 000-default.conf
         a2ensite laravel-app
         a2enmod rewrite
     
@@ -343,9 +353,110 @@ class DeploymentController extends Controller
         exit 1
     }
     BASH;
-    }
-    
+    }*/
 
+    
+ /*   private function getUserData($githubRepo)
+{
+    // Validate and sanitize GitHub repository input
+    $repoName = escapeshellarg($githubRepo);
+    $dbName = strtolower(str_replace('-', '_', basename($repoName, '.git'))) . '_db'; // Create database name dynamically based on repo name
+    $dbUser = strtolower(str_replace('-', '_', basename($repoName, '.git'))) . '_user'; // Create database user dynamically based on repo name
+    $dbPassword = 'securepassword'; // Set a default password or generate dynamically if needed
+
+    return <<<BASH
+#!/bin/bash
+set -e  # Exit immediately if a command exits with a non-zero status
+LOGFILE='/var/log/deployment.log'
+
+exec > >(tee -a \$LOGFILE) 2>&1  # Log all output to file
+
+{
+    echo 'Starting deployment process...'
+
+    # Update and install dependencies
+    apt-get update -y
+    apt-get install -y git
+    apt-get install -y apache2
+    apt-get install -y software-properties-common  # Needed for adding PPAs
+    apt-get install -y mariadb-server
+
+    # Add the repository for the latest PHP version
+    add-apt-repository ppa:ondrej/php -y
+    apt-get update -y
+
+    # Install the latest PHP version compatible with Composer (e.g., PHP 8.2 or 8.3)
+    apt-get install -y php8.2 libapache2-mod-php8.2 php8.2-mbstring php8.2-xml php8.2-bcmath php8.2-cli php8.2-curl php8.2-zip php8.2-mysql composer
+
+    # Start and secure MariaDB
+    systemctl start mariadb
+    mysql_secure_installation <<EOF
+
+y
+rootpassword 
+rootpassword
+y
+y
+y
+y
+EOF
+
+    # Create database and user dynamically
+    mysql -uroot -prootpassword -e "CREATE DATABASE \$dbName;"
+    mysql -uroot -prootpassword -e "CREATE USER '\$dbUser'@'localhost' IDENTIFIED BY '\$dbPassword';"
+    mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON \$dbName.* TO '\$dbUser'@'localhost';"
+    mysql -uroot -prootpassword -e "FLUSH PRIVILEGES;"
+
+    # Clone the GitHub repo
+    cd /var/www/html
+    git clone https://github.com/$repoName
+    cd \$(basename $repoName .git)  # Change directory to the cloned repo
+
+    # Install composer dependencies
+    composer install
+
+    # Set up .env file with dynamic DB values
+    cp .env.example .env
+    # sed -i "s/DB_DATABASE=.*//*DB_DATABASE=\$dbName/" .env
+    /*sed -i "s/DB_USERNAME=.*//*DB_USERNAME=\$dbUser/" .env
+    sed -i "s/DB_PASSWORD=.*//*DB_PASSWORD=\$dbPassword/" .env
+    php artisan key:generate
+    php artisan migrate --force
+
+    # Set file permissions
+    chown -R www-data:www-data /var/www/html
+    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+
+    # Apache setup
+    cat <<EOL > /etc/apache2/sites-available/laravel-app.conf
+<VirtualHost *:80>
+    ServerAdmin admin@example.com
+    DocumentRoot /var/www/html/\$(basename $repoName .git)/public
+    <Directory /var/www/html/\$(basename $repoName .git)/public>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog \${APACHE_LOG_DIR}/laravel-app-error.log
+    CustomLog \${APACHE_LOG_DIR}/laravel-app-access.log combined
+</VirtualHost>
+EOL
+
+    # Enable Apache site and modules
+    a2dissite 000-default.conf
+    a2ensite laravel-app
+    a2enmod rewrite
+
+    # Restart Apache to apply changes
+    systemctl restart apache2
+
+    echo 'Deployment completed successfully.'
+} || {
+    echo 'Deployment failed. Check \$LOGFILE for details.'
+    exit 1
+}
+BASH;
+}*/
 
  
     //handling the amount of droplet in digitalOcean 
@@ -402,7 +513,7 @@ class DeploymentController extends Controller
      * this function gets your sshkey ifyou have one or 
      * help you create one if you don't.
      */
-    private function getOrCreateSSHKey($apiToken)
+    /*private function getOrCreateSSHKey($apiToken)
     {
         $client = new Client();
         $sshKeyName = 'Default SSH Key for Users';
@@ -438,12 +549,12 @@ class DeploymentController extends Controller
 
         $newKey = json_decode($response->getBody()->getContents(), true);
         return $newKey['fingerprint'];
-    }
+    }*/
 
 
 
     //all about CI/CD
-    public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
+   /* public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
         $filePath = '.github/workflows/deploy.yml';
         $commitMessage = "Add CI/CD workflow file for deployment";
     
@@ -469,7 +580,7 @@ class DeploymentController extends Controller
         curl_close($ch);
     
         return $response ? json_decode($response, true) : false;
-    }
+    }*/
    
 
 }

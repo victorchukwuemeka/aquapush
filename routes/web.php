@@ -36,7 +36,7 @@ Route::get('/deployments', [DeploymentController::class, 'index'])->name('deploy
 Route::get('/deploy/new', [DeploymentController::class, 'create'])
 ->middleware(GitHubAuthenticated::class)
 ->name('deploy.new');
-
+Route::get('/ssh/get', [DeploymentController::class, 'ssh'])->name('get-ssh');
 
 
 //Route::post('/deploy', [DeploymentController::class, 'fetchRepositoryDetails'])

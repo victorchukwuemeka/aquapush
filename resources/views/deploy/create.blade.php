@@ -7,7 +7,13 @@
     </h1>
 
     <p class="text-gray-700 mb-10 text-center">
-        Provide the necessary details below to set up and deploy your Laravel application to DigitalOcean.
+        Provide the necessary details below to set up and deploy your Laravel application
+         to DigitalOcean.
+        <p>
+            <a href="{{ route('get-ssh') }}" class="text-red-600 hover:underline">
+                How to get your SSH key
+            </a>
+        </p>
     </p>
 
     <form action="{{ route('deploy.store') }}" method="POST" class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
@@ -40,6 +46,22 @@
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600"
                 required
             >
+        </div>
+
+        <!-- SSH Public Key (Paste) -->
+        <div class="mb-6">
+            <label for="ssh_key" class="block text-gray-700 font-medium mb-2">Paste Your SSH Public Key</label>
+            <textarea
+                id="ssh_key"
+                name="ssh_key"
+                rows="5"
+                placeholder="Paste your SSH public key here (e.g., ssh-rsa AAAAB3NzaC1yc2E...)"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600"
+                required
+            >{{ old('ssh_key') }}</textarea>
+            <p class="text-sm text-gray-500 mt-2">
+                Don't have an SSH key? <a href="{{ route('get-ssh') }}" class="text-red-600 hover:underline">Learn how to generate one</a>.
+            </p>
         </div>
 
         <!-- DigitalOcean Region -->
