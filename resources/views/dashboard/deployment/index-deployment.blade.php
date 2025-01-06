@@ -3,9 +3,7 @@
 @section('content')
 <div class="flex flex-col lg:flex-row">
     <!-- Sidebar -->
-    
-        @include('partials.sidebar')
-
+    @include('partials.sidebar')
 
     <!-- Main Content -->
     <main class="flex-1 p-8">
@@ -34,6 +32,7 @@
                         <th class="border border-gray-300 px-4 py-2">Region</th>
                         <th class="border border-gray-300 px-4 py-2">IP Address</th>
                         <th class="border border-gray-300 px-4 py-2">Status</th>
+                        <th class="border border-gray-300 px-4 py-2">Show</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,10 +47,15 @@
                                     {{ ucfirst($droplet->status) }}
                                 </span>
                             </td>
+                            <td class="border border-gray-300 px-4 py-2">
+                                <a href="{{ route('droplet.show', $droplet->id) }}" class="text-blue-500 hover:underline">
+                                    {{ __('Show Droplet') }}
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="border border-gray-300 px-4 py-2 text-center">
+                            <td colspan="5" class="border border-gray-300 px-4 py-2 text-center">
                                 No droplets found. 
                                 <a href="{{ route('deploy.create') }}" class="text-blue-500 hover:underline">Deploy one now!</a>
                             </td>

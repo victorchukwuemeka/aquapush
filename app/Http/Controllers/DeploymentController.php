@@ -16,6 +16,8 @@ class DeploymentController extends Controller
     //variable for deployment storage
     private $store_deployment;
 
+    private $ssh_key_in_session;
+
     //available droplet sizes
     private $dropletSizes = [
         's-1vcpu-1gb' => 'Basic: 1 vCPU, 1 GB RAM',
@@ -64,7 +66,7 @@ class DeploymentController extends Controller
     }
 
     public function deploy(Request $request){
-         dd($request);
+        // dd($request);
         // Validate the incoming request data
         $validatedData = $this->validateDeploymentData($request);
 
@@ -90,11 +92,16 @@ class DeploymentController extends Controller
              return redirect()->route('digitalocean.config')->with('error', $dropletLimitCheck['message']);
          }
 
-         // Check if the SSH key exists or add it
-         //$sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
+         
         
         //confirm its a laravel repo before creating a droplet
         if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
+            //dd($validatedData['ssh_key']);
+            $this->ssh_key_in_session = $validatedData['ssh_key'];
+            // Check if the SSH key exists or add it
+            $sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
+            //dd($this->ssh_key_in_session);
+
             // Call the method to create the droplet
             $droplet = $this->createDroplet(
                 $validatedData['api_token'],
@@ -103,7 +110,7 @@ class DeploymentController extends Controller
                 $validatedData['droplet_size'],
                 $validatedData['image'], 
                 $validatedData['repository'],
-                $validatedData['ssh_key']
+                $sshFingerprint
             );
             //$this->pollDropletStatus($validatedData['api_token'],)
             //$this->start_deployment($this->store_deployment);
@@ -513,12 +520,14 @@ BASH;
      * this function gets your sshkey ifyou have one or 
      * help you create one if you don't.
      */
-    /*private function getOrCreateSSHKey($apiToken)
+    private function getOrCreateSSHKey($apiToken)
     {
         $client = new Client();
         $sshKeyName = 'Default SSH Key for Users';
-        $publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzp/ztFkVR4oF/QBhuHfwcVr8coqr8kGAv35WdjoM0EIAWETNWCDbLQkljI4HtO2RnAIyxt6mSeyHmg4++9CdVv5uenQ5sSdx1BStZWH3XhuT6pJ+OTqavP8qehgQSZUQ2+uBkahMSxMpVr7Av/LM7a/dLS2j58sta8ywabwhk9zPLqJ+dUpgHDdRfltlRiMG3GMKwWiU/HvEU3Ys4Pnbq+QrJasIE0x8TtE1yzAP1VKd8nTwVKi21yPVNz6zQjnEl1tAjVbUS3AzOtJt/6f/PucZUGH1eHMlM89uwSTc2UpKLuYDEGJle3Yv081EOqeAB3WR0GycNwvSL2LqVtUKoM4ohIXZJ0zxhlnwc7WHg8ZnI6zick8+j8/7XFi141mRzylZrIzcTH27Qsb3z2tizyZB5Kt7zYJ9eDnNAmn961knHcUF74cNgOdTRgMH8AGYabjdqngupuHBmBEiahMg9vrj2RP5PgksjDFnWKQrhaezFs+dp6Jv/aGfiZDhDpVM= victor@victor-Latitude-3380';
-
+        $publicKey = $this->ssh_key_in_session;
+        //dd($publicKey);
+        //$publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzp/ztFkVR4oF/QBhuHfwcVr8coqr8kGAv35WdjoM0EIAWETNWCDbLQkljI4HtO2RnAIyxt6mSeyHmg4++9CdVv5uenQ5sSdx1BStZWH3XhuT6pJ+OTqavP8qehgQSZUQ2+uBkahMSxMpVr7Av/LM7a/dLS2j58sta8ywabwhk9zPLqJ+dUpgHDdRfltlRiMG3GMKwWiU/HvEU3Ys4Pnbq+QrJasIE0x8TtE1yzAP1VKd8nTwVKi21yPVNz6zQjnEl1tAjVbUS3AzOtJt/6f/PucZUGH1eHMlM89uwSTc2UpKLuYDEGJle3Yv081EOqeAB3WR0GycNwvSL2LqVtUKoM4ohIXZJ0zxhlnwc7WHg8ZnI6zick8+j8/7XFi141mRzylZrIzcTH27Qsb3z2tizyZB5Kt7zYJ9eDnNAmn961knHcUF74cNgOdTRgMH8AGYabjdqngupuHBmBEiahMg9vrj2RP5PgksjDFnWKQrhaezFs+dp6Jv/aGfiZDhDpVM= victor@victor-Latitude-3380';
+         
         // Check for existing SSH keys
         $response = $client->get('https://api.digitalocean.com/v2/account/keys', [
             'headers' => [
@@ -549,7 +558,7 @@ BASH;
 
         $newKey = json_decode($response->getBody()->getContents(), true);
         return $newKey['fingerprint'];
-    }*/
+    }
 
 
 

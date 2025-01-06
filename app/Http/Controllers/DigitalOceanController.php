@@ -5,19 +5,30 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use GuzzleHttp\Client;
+use App\Models\DigitalOceanDroplet;
 
 class DigitalOceanController extends Controller
 {
-    private $dropletSizes = [
+    public function show($id){
+
+        // Fetch the Droplet by ID
+        $droplet = DigitalOceanDroplet::findOrFail($id);
+
+        // Pass the Droplet data to the view
+        return view('dashboard.droplets.show-droplet', compact('droplet'));
+    }
+
+
+    /*private $dropletSizes = [
         's-1vcpu-1gb' => 'Basic: 1 vCPU, 1 GB RAM',
         's-1vcpu-2gb' => 'Standard: 1 vCPU, 2 GB RAM',
         's-2vcpu-2gb' => 'Standard: 2 vCPU, 2 GB RAM',
         's-2vcpu-4gb' => 'Standard: 2 vCPU, 4 GB RAM',
         's-2vcpu-8gb' => 'Standard: 2 vCPU, 8 GB RAM',
         // Add more sizes as needed
-    ];
+    ];*/
 
-    public function showForm()
+    /*public function showForm()
     {
         $api_token = session('digitalocean.api_token');
         $droplet_size = session('digitalocean.droplet_size');
@@ -27,9 +38,9 @@ class DigitalOceanController extends Controller
             'api_token' => $api_token,
             'droplet_size' => $droplet_size,
         ]);
-    }
+    }*/
 
-    public function store(Request $request)
+    /*public function store(Request $request)
     {
         // Validate the incoming request data
         $validatedData = $request->validate([
@@ -72,9 +83,9 @@ class DigitalOceanController extends Controller
 
         //dd($droplet);
         return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
-    }
+    }*/
 
-    public function createDroplet($apiToken, $dropletName, $region, $size, $image, $githubRepo,$ssh_key)
+    /*public function createDroplet($apiToken, $dropletName, $region, $size, $image, $githubRepo,$ssh_key)
     {
         $client = new Client();
          
@@ -101,9 +112,9 @@ class DigitalOceanController extends Controller
         //dd($response);
         $body = json_decode($response->getBody()->getContents(), true);
         return $body;
-    }
+    }*/
     
-    private function getUserData($githubRepo)
+   /* private function getUserData($githubRepo)
     {
         // Custom user data script to clone the GitHub repo and set up Laravel with Apache2
         return "#!/bin/bash
@@ -121,10 +132,10 @@ class DigitalOceanController extends Controller
             chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
             systemctl enable apache2
             systemctl restart apache2";
-    }
+    }*/
 
 
-    private function checkDropletLimit($apiToken)
+    /*private function checkDropletLimit($apiToken)
     {    
         //dd($apiToken);
         //try {
@@ -170,10 +181,10 @@ class DigitalOceanController extends Controller
                 'message' => 'An error occurred while checking your droplet limit. Please try again later.'
             ];
         }*/
-    }
+    //}
 
 
-    private function getOrCreateSSHKey($apiToken)
+    /*private function getOrCreateSSHKey($apiToken)
     {
         $client = new Client();
         $sshKeyName = 'Default SSH Key for Users';
@@ -209,9 +220,9 @@ class DigitalOceanController extends Controller
 
         $newKey = json_decode($response->getBody()->getContents(), true);
         return $newKey['fingerprint'];
-    }
+    }*/
 
-    public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
+    /*public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
         $filePath = '.github/workflows/deploy.yml';
         $commitMessage = "Add CI/CD workflow file for deployment";
     
@@ -237,6 +248,6 @@ class DigitalOceanController extends Controller
         curl_close($ch);
     
         return $response ? json_decode($response, true) : false;
-    }
+    }*/
     
 }
