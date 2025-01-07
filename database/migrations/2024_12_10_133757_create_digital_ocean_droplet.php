@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('region')->nullable();
             $table->string('repository');
             $table->string('image')->nullable();
+            $table->string('ip_address');
             $table->enum('status', ['pending', 'inprogress', 'active', 'failed'])->default('Pending');
             $table->timestamps();
         });

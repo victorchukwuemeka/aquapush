@@ -19,6 +19,7 @@ class DigitalOceanDroplet extends Model
         'image',
         'repository',
         'region',
+        'ip_address',
         'status',
     ];
 

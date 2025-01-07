@@ -57,7 +57,7 @@
                         <tr>
                             <td colspan="5" class="border border-gray-300 px-4 py-2 text-center">
                                 No droplets found. 
-                                <a href="{{ route('deploy.create') }}" class="text-blue-500 hover:underline">Deploy one now!</a>
+                                <a href="{{ url('deploy.create') }}" class="text-blue-500 hover:underline">Deploy one now!</a>
                             </td>
                         </tr>
                     @endforelse

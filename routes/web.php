@@ -53,7 +53,10 @@ Route::get('/digitalocean/config', [DigitalOceanController::class, 'showForm'])
  // Handle the form submission
 Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 ->name('digitalocean.store');
-
+Route::get('/digitalocean/show/droplet/{show}', [DigitalOceanController::class, 'show'])
+ ->name('droplet.show');
+Route::post('/droplets/{id}/setup', [DigitalOceanController::class, 'setupProject'])
+->name('droplet.setup');
 
 //dashborad related stuffs 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -65,7 +68,10 @@ Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])
 ->name('account.settings.index');
 
+//use App\Http\Controllers\DropletController;
 
+// Single Droplet View
+//Route::get('/droplets/{id}', [DropletController::class, 'show'])->name('droplet.show');
 
 
 //Route::get('/api/tokens', [ApiTokenController::class, 'index'])->name('api.tokens');

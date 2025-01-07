@@ -18,6 +18,8 @@ class DeploymentController extends Controller
 
     private $ssh_key_in_session;
 
+    private $ip_address;
+
     //available droplet sizes
     private $dropletSizes = [
         's-1vcpu-1gb' => 'Basic: 1 vCPU, 1 GB RAM',
@@ -135,7 +137,10 @@ class DeploymentController extends Controller
             'region' => $validatedData['region'],
             'image' => $validatedData['image'],
             'droplet_name' => $validatedData['droplet_name'],
+            'ip_address' => $this->ip_address,
             'status' => 'pending',
+            
+
         ]);
     }
     
@@ -212,6 +217,9 @@ class DeploymentController extends Controller
         $body = json_decode($response->getBody()->getContents(), true);
         $dropletId = $body['droplet']['id'];
         
+        //getting the droplet ip address after its created 
+        $this->getIpAddress($dropletId,$apiToken);
+        
         // Save droplet ID to track status
         $this->store_deployment->update(['droplet_id' => $dropletId, 'status' => 'inprogress']);
     
@@ -219,6 +227,27 @@ class DeploymentController extends Controller
         $this->pollDropletStatus($apiToken, $dropletId);   
     }
     
+    /**
+     * this function is for getting the ip address.
+     */
+    public function getIpAddress($dropletId, $apiToken){
+        $client = new Client();
+        $response_for_get_call = $client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}",[
+            'headers'=>[
+                'Authorization' => 'Bearer'. $apiToken,
+                'Context-type' => 'application/json',
+            ]
+        ]);
+        $body_from_get_call = json_decode($response_for_get_call->getBody()->getContents(), true);
+        $networks = $body_from_get_call['droplet']['networks']['v4'];
+
+        foreach ($networks as $network) {
+            if ($network['type'] === 'public') {
+                return $this->ip_address = $network['ip_address'];
+            }
+        }
+
+    }
 
     /**
      * using the deployment status to monitor it .
