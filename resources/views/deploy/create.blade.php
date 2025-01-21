@@ -63,6 +63,7 @@
                 Don't have an SSH key? <a href="{{ route('get-ssh') }}" class="text-red-600 hover:underline">Learn how to generate one</a>.
             </p>
         </div>
+        
 
         <!-- DigitalOcean Region -->
         <div class="mb-6">

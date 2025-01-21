@@ -20,6 +20,13 @@ class DeploymentController extends Controller
 
     private $ip_address;
 
+    private $client;
+
+    public function __construct()
+    {
+        $this->client = new Client();
+    }
+
     //available droplet sizes
     private $dropletSizes = [
         's-1vcpu-1gb' => 'Basic: 1 vCPU, 1 GB RAM',
@@ -73,12 +80,7 @@ class DeploymentController extends Controller
         $validatedData = $this->validateDeploymentData($request);
 
         
-        //check if it's a laravel repo and store in the database.
-        if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
-             //storing the droplet in my db so it can be tracked .
-            $this->store_deployment = $this->storeDeployment($validatedData);
-        }
-    
+       
 
         
         // Store the token and droplet size in session  as needed
@@ -114,6 +116,13 @@ class DeploymentController extends Controller
                 $validatedData['repository'],
                 $sshFingerprint
             );
+            
+            //check if it's a laravel repo and store in the database.
+            if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
+                //storing the droplet in my db so it can be tracked .
+                $this->store_deployment = $this->storeDeployment($validatedData);
+            }
+   
             //$this->pollDropletStatus($validatedData['api_token'],)
             //$this->start_deployment($this->store_deployment);
             return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
@@ -194,10 +203,10 @@ class DeploymentController extends Controller
         $githubRepo,
         $ssh_key
     ){
-        $client = new Client();
+        //$client = new Client();
 
         // Send request to DigitalOcean API to create droplet
-        $response = $client->post('https://api.digitalocean.com/v2/droplets', [
+        $response = $this->client->post('https://api.digitalocean.com/v2/droplets', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiToken,
                 'Content-Type' => 'application/json',
@@ -231,8 +240,8 @@ class DeploymentController extends Controller
      * this function is for getting the ip address.
      */
     public function getIpAddress($dropletId, $apiToken){
-        $client = new Client();
-        $response_for_get_call = $client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}",[
+        //$client = new Client();
+        $response_for_get_call = $this->client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}",[
             'headers'=>[
                 'Authorization' => 'Bearer'. $apiToken,
                 'Context-type' => 'application/json',
