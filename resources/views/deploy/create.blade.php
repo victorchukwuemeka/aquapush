@@ -19,21 +19,6 @@
     <form action="{{ route('deploy.store') }}" method="POST" class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
         @csrf
 
-        <!-- GitHub Repository -->
-        <div class="mb-6">
-            <label for="repository" class="block text-gray-700 font-medium mb-2">
-                GitHub Username and Repo (e.g., victor/ecom)
-            </label>
-            <input
-                type="text"
-                id="repository"
-                name="repository"
-                placeholder="e.g., username/repository"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-red-600 focus:border-red-600"
-                required
-            >
-        </div>
-
         <!-- DigitalOcean API Token -->
         <div class="mb-6">
             <label for="api_token" class="block text-gray-700 font-medium mb-2">DigitalOcean API Token</label>

@@ -75,60 +75,51 @@ class DeploymentController extends Controller
     }
 
     public function deploy(Request $request){
-        // dd($request);
-        // Validate the incoming request data
-        $validatedData = $this->validateDeploymentData($request);
-
+        try {
+            // Validate the incoming request data
+            $validatedData = $this->validateDeploymentData($request);
         
-       
-
-        
-        // Store the token and droplet size in session  as needed
-        // For demonstration, we're using the session
-        session([
+           // Store the token and droplet size in session  as needed
+           // For demonstration, we're using the session
+           session([
             'digitalocean.api_token' => $validatedData['api_token'],
             'digitalocean.droplet_size' => $validatedData['droplet_size'],
-        ]);
+          ]);
 
-         // Check droplet limit so yu will not push more droplet.
+         // Check droplet limit so you will not push more droplet.
          $dropletLimitCheck = $this->checkDropletLimit($validatedData['api_token']);
          if ($dropletLimitCheck['status'] === 'error') {
              return redirect()->route('digitalocean.config')->with('error', $dropletLimitCheck['message']);
          }
 
+         $sshFingerprint = $this->ssh_key_in_session = $validatedData['ssh_key'];
+         //dd($sshFingerprint);
+         $sshFingerprint = $this->sanitizeAndVaidateSShKey($sshFingerprint,$validatedData['api_token']);
          
-        
-        //confirm its a laravel repo before creating a droplet
-        if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
-            //dd($validatedData['ssh_key']);
-            $this->ssh_key_in_session = $validatedData['ssh_key'];
-            // Check if the SSH key exists or add it
-            $sshFingerprint = $this->getOrCreateSSHKey($validatedData['api_token']);
-            //dd($this->ssh_key_in_session);
-
-            // Call the method to create the droplet
-            $droplet = $this->createDroplet(
-                $validatedData['api_token'],
-                $validatedData['droplet_name'], 
-                $validatedData['region'],
-                $validatedData['droplet_size'],
-                $validatedData['image'], 
-                $validatedData['repository'],
-                $sshFingerprint
-            );
-            
-            //check if it's a laravel repo and store in the database.
-            if ($this->check_if_repo_is_laravel($validatedData['repository'])) {
-                //storing the droplet in my db so it can be tracked .
-                $this->store_deployment = $this->storeDeployment($validatedData);
-            }
-   
-            //$this->pollDropletStatus($validatedData['api_token'],)
-            //$this->start_deployment($this->store_deployment);
-            return redirect()->route('dashboard')->with('success', 'Droplet created successfully!');
-        }else{
-            return redirect()->route('error-not-laravel');
+         
+         
+         //creating the droplet
+         $created_droplet = $this->createDroplet(
+            $validatedData['api_token'],
+            $validatedData['droplet_name'], 
+            $validatedData['region'],
+            $validatedData['droplet_size'],
+            $validatedData['image'], 
+            $sshFingerprint
+         );
+           // Step 6: Return success or failure
+           if ($created_droplet) {
+              return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
+           } else {
+              return redirect()->route('digitalocean.config')->with('error', 'Failed to create droplet.');
+           }
+        } catch (\Throwable $th) {
+            //throw $th;
+            // Handle exceptions and log errors
+            Log::error('Droplet Deployment Error: ' . $th->getMessage());
+            return redirect()->route('digitalocean.config')->with('error', 'An error occurred while deploying the droplet.');
         }
+            //return redirect()->route('error-not-laravel');
         
     }
     
@@ -162,11 +153,11 @@ class DeploymentController extends Controller
         return $data->validate([
             'api_token' => 'required|string',
             'ssh_key' => 'required|string',
-            'droplet_size' => 'required|string',
-            'repository' => 'required|string',
             'region' => 'required|string',
-            'image' => 'required|string',
+            'droplet_size' => 'required|string',
             'droplet_name' => 'required|string',
+            'image' => 'required|string',
+            
         ]);
     }
 
@@ -192,50 +183,96 @@ class DeploymentController extends Controller
         $store_deployment_status = DigitalOceanDroplet::findOrFail($id);
         return response()->json(['status' => $store_deployment_status->status]);
     }
-    
-    //handles creating of droplet in the digitalOcean .
-    public function createDroplet(
-        $apiToken, 
-        $dropletName, 
-        $region,
-        $size, 
-        $image, 
-        $githubRepo,
-        $ssh_key
-    ){
-        //$client = new Client();
 
-        // Send request to DigitalOcean API to create droplet
-        $response = $this->client->post('https://api.digitalocean.com/v2/droplets', [
+
+
+    /**
+     * Check if an SSH key exists. If not, add it.
+     */
+    public function getOrAddSshKey($apiToken, $publicKey)
+    {  
+        $keyName = "Default ssh";
+        // Fetch existing SSH keys
+        $response = $this->client->get('https://api.digitalocean.com/v2/account/keys', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $apiToken,
+            ],
+        ]);
+
+        $existingKeys = json_decode($response->getBody(), true)['ssh_keys'];
+
+        // Check if the provided SSH key already exists
+        foreach ($existingKeys as $key) {
+            if ($key['public_key'] === $publicKey) {
+                return $key['fingerprint']; // Return fingerprint if key exists
+            }
+        }
+
+        // Add the SSH key if it doesn't exist
+        $response = $this->client->post('https://api.digitalocean.com/v2/account/keys', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiToken,
                 'Content-Type' => 'application/json',
             ],
             'json' => [
-                'name' => $dropletName,
-                'region' => $region,
-                'size' => $size,
-                'image' => $image,  // Example: 'ubuntu-20-04-x64'
-                'ssh_keys' => $ssh_key,
-                'backups' => false,
-                //'user_data' => $this->getUserData($githubRepo),
+                'name' => $keyName,
+                'public_key' => $publicKey,
             ],
         ]);
 
-        //get the details of your droplet.
-        $body = json_decode($response->getBody()->getContents(), true);
-        $dropletId = $body['droplet']['id'];
-        
-        //getting the droplet ip address after its created 
-        $this->getIpAddress($dropletId,$apiToken);
-        
-        // Save droplet ID to track status
-        $this->store_deployment->update(['droplet_id' => $dropletId, 'status' => 'inprogress']);
-    
-        // Poll droplet status periodically
-        $this->pollDropletStatus($apiToken, $dropletId);   
+        $newKey = json_decode($response->getBody(), true);
+        return $newKey['fingerprint']; // Return the new fingerprint
     }
+
+    public function createDroplet($apiToken, $dropletName, $region, $size, $image, $publicKey = null)
+    {  
+        //dd($publicKey);
+        $sshFingerprint = null;
+
+        // Check or add SSH key only if a public key is provided
+        if ($publicKey) {
+            $sshFingerprint = $this->getOrAddSshKey($apiToken, $publicKey);
+            //dd($sshFingerprint);
+        }
+
+        // Prepare droplet creation payload
+        $payload = [
+            'name' => $dropletName,
+            'region' => $region,
+            'size' => $size,
+            'image' => $image, // Example: 'ubuntu-20-04-x64'
+            'backups' => false,
+        ];
+
+        // Add SSH keys to the payload only if a fingerprint exists
+        if ($sshFingerprint) {
+            $payload['ssh_keys'] = [$sshFingerprint];
+        }
+
+        // Create the droplet
+        $response = $this->client->post('https://api.digitalocean.com/v2/droplets', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $apiToken,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $payload,
+        ]);
+
+        return json_decode($response->getBody(), true); // Return droplet details
+    }
+ 
+
+    private function sanitizeAndVaidateSShKey($ssh_key, $api_token){
+        $ssh_key = trim($ssh_key);
+        $ssh_key = preg_replace('/\s+/', ' ',$ssh_key);
+        return $ssh_key;
+    }
+
     
+    
+
+
+
     /**
      * this function is for getting the ip address.
      */
@@ -330,179 +367,7 @@ class DeploymentController extends Controller
         }
         return false;
     }
-    
-    /*private function getUserData($githubRepo)
-    {
-        // Validate and sanitize GitHub repository input
-        $repoName = escapeshellarg($githubRepo);
-    
-        return <<<BASH
-    #!/bin/bash
-    set -e  # Exit immediately if a command exits with a non-zero status
-    LOGFILE='/var/log/deployment.log'
-    
-    exec > >(tee -a \$LOGFILE) 2>&1  # Log all output to file
-    
-    {
-        echo 'Starting deployment process...'
-    
-        # Update and install dependencies
-        apt-get update -y
-        apt-get install -y git
-        apt-get install -y apache2
-        apt-get install -y php libapache2-mod-php php-mbstring php-xml php-bcmath php-cli php-curl php-zip php-mysql composer
-    
-        # Clone the GitHub repo
-        cd /var/www/html
-        git clone https://github.com/$repoName
-        cd \$(basename $repoName .git)  # Change directory to the cloned repo
-    
-        # Install composer dependencies
-        composer install
-    
-        # Set up .env file
-        cp .env.example .env
-        php artisan key:generate
-        php artisan migrate --force
-    
-        # Set file permissions
-        chown -R www-data:www-data /var/www/html
-        chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
-    
-        # Apache setup
-        cat <<EOL > /etc/apache2/sites-available/laravel-app.conf
-    <VirtualHost *:80>
-        ServerAdmin admin@example.com
-        DocumentRoot /var/www/html/\$(basename $repoName .git)/public
-        <Directory /var/www/html/\$(basename $repoName .git)/public>
-            Options Indexes FollowSymLinks
-            AllowOverride All
-            Require all granted
-        </Directory>
-        ErrorLog \${APACHE_LOG_DIR}/laravel-app-error.log
-        CustomLog \${APACHE_LOG_DIR}/laravel-app-access.log combined
-    </VirtualHost>
-    EOL
-    
-        # Enable Apache site and modules
-        a2dissite 000-default.conf
-        a2ensite laravel-app
-        a2enmod rewrite
-    
-        # Restart Apache to apply changes
-        systemctl restart apache2
-    
-        echo 'Deployment completed successfully.'
-    } || {
-        echo 'Deployment failed. Check \$LOGFILE for details.'
-        exit 1
-    }
-    BASH;
-    }*/
-
-    
- /*   private function getUserData($githubRepo)
-{
-    // Validate and sanitize GitHub repository input
-    $repoName = escapeshellarg($githubRepo);
-    $dbName = strtolower(str_replace('-', '_', basename($repoName, '.git'))) . '_db'; // Create database name dynamically based on repo name
-    $dbUser = strtolower(str_replace('-', '_', basename($repoName, '.git'))) . '_user'; // Create database user dynamically based on repo name
-    $dbPassword = 'securepassword'; // Set a default password or generate dynamically if needed
-
-    return <<<BASH
-#!/bin/bash
-set -e  # Exit immediately if a command exits with a non-zero status
-LOGFILE='/var/log/deployment.log'
-
-exec > >(tee -a \$LOGFILE) 2>&1  # Log all output to file
-
-{
-    echo 'Starting deployment process...'
-
-    # Update and install dependencies
-    apt-get update -y
-    apt-get install -y git
-    apt-get install -y apache2
-    apt-get install -y software-properties-common  # Needed for adding PPAs
-    apt-get install -y mariadb-server
-
-    # Add the repository for the latest PHP version
-    add-apt-repository ppa:ondrej/php -y
-    apt-get update -y
-
-    # Install the latest PHP version compatible with Composer (e.g., PHP 8.2 or 8.3)
-    apt-get install -y php8.2 libapache2-mod-php8.2 php8.2-mbstring php8.2-xml php8.2-bcmath php8.2-cli php8.2-curl php8.2-zip php8.2-mysql composer
-
-    # Start and secure MariaDB
-    systemctl start mariadb
-    mysql_secure_installation <<EOF
-
-y
-rootpassword 
-rootpassword
-y
-y
-y
-y
-EOF
-
-    # Create database and user dynamically
-    mysql -uroot -prootpassword -e "CREATE DATABASE \$dbName;"
-    mysql -uroot -prootpassword -e "CREATE USER '\$dbUser'@'localhost' IDENTIFIED BY '\$dbPassword';"
-    mysql -uroot -prootpassword -e "GRANT ALL PRIVILEGES ON \$dbName.* TO '\$dbUser'@'localhost';"
-    mysql -uroot -prootpassword -e "FLUSH PRIVILEGES;"
-
-    # Clone the GitHub repo
-    cd /var/www/html
-    git clone https://github.com/$repoName
-    cd \$(basename $repoName .git)  # Change directory to the cloned repo
-
-    # Install composer dependencies
-    composer install
-
-    # Set up .env file with dynamic DB values
-    cp .env.example .env
-    # sed -i "s/DB_DATABASE=.*//*DB_DATABASE=\$dbName/" .env
-    /*sed -i "s/DB_USERNAME=.*//*DB_USERNAME=\$dbUser/" .env
-    sed -i "s/DB_PASSWORD=.*//*DB_PASSWORD=\$dbPassword/" .env
-    php artisan key:generate
-    php artisan migrate --force
-
-    # Set file permissions
-    chown -R www-data:www-data /var/www/html
-    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
-
-    # Apache setup
-    cat <<EOL > /etc/apache2/sites-available/laravel-app.conf
-<VirtualHost *:80>
-    ServerAdmin admin@example.com
-    DocumentRoot /var/www/html/\$(basename $repoName .git)/public
-    <Directory /var/www/html/\$(basename $repoName .git)/public>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    ErrorLog \${APACHE_LOG_DIR}/laravel-app-error.log
-    CustomLog \${APACHE_LOG_DIR}/laravel-app-access.log combined
-</VirtualHost>
-EOL
-
-    # Enable Apache site and modules
-    a2dissite 000-default.conf
-    a2ensite laravel-app
-    a2enmod rewrite
-
-    # Restart Apache to apply changes
-    systemctl restart apache2
-
-    echo 'Deployment completed successfully.'
-} || {
-    echo 'Deployment failed. Check \$LOGFILE for details.'
-    exit 1
-}
-BASH;
-}*/
-
+  
  
     //handling the amount of droplet in digitalOcean 
     private function checkDropletLimit($apiToken)
@@ -554,51 +419,7 @@ BASH;
     }
 
 
-    /**
-     * this function gets your sshkey ifyou have one or 
-     * help you create one if you don't.
-     */
-    private function getOrCreateSSHKey($apiToken)
-    {
-        $client = new Client();
-        $sshKeyName = 'Default SSH Key for Users';
-        $publicKey = $this->ssh_key_in_session;
-        //dd($publicKey);
-        //$publicKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzp/ztFkVR4oF/QBhuHfwcVr8coqr8kGAv35WdjoM0EIAWETNWCDbLQkljI4HtO2RnAIyxt6mSeyHmg4++9CdVv5uenQ5sSdx1BStZWH3XhuT6pJ+OTqavP8qehgQSZUQ2+uBkahMSxMpVr7Av/LM7a/dLS2j58sta8ywabwhk9zPLqJ+dUpgHDdRfltlRiMG3GMKwWiU/HvEU3Ys4Pnbq+QrJasIE0x8TtE1yzAP1VKd8nTwVKi21yPVNz6zQjnEl1tAjVbUS3AzOtJt/6f/PucZUGH1eHMlM89uwSTc2UpKLuYDEGJle3Yv081EOqeAB3WR0GycNwvSL2LqVtUKoM4ohIXZJ0zxhlnwc7WHg8ZnI6zick8+j8/7XFi141mRzylZrIzcTH27Qsb3z2tizyZB5Kt7zYJ9eDnNAmn961knHcUF74cNgOdTRgMH8AGYabjdqngupuHBmBEiahMg9vrj2RP5PgksjDFnWKQrhaezFs+dp6Jv/aGfiZDhDpVM= victor@victor-Latitude-3380';
-         
-        // Check for existing SSH keys
-        $response = $client->get('https://api.digitalocean.com/v2/account/keys', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $apiToken,
-            ],
-        ]);
-
-        $sshKeys = json_decode($response->getBody()->getContents(), true)['ssh_keys'];
-
-        // Find an existing key with the same name
-        foreach ($sshKeys as $key) {
-            if ($key['public_key'] === $publicKey) {
-                return $key['fingerprint'];
-            }
-        }
-
-        // Add new SSH key if not found
-        $response = $client->post('https://api.digitalocean.com/v2/account/keys', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $apiToken,
-                'Content-Type' => 'application/json',
-            ],
-            'json' => [
-                'name' => $sshKeyName,
-                'public_key' => $publicKey,
-            ],
-        ]);
-
-        $newKey = json_decode($response->getBody()->getContents(), true);
-        return $newKey['fingerprint'];
-    }
-
-
+    
 
     //all about CI/CD
    /* public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
