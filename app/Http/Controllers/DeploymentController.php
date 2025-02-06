@@ -47,7 +47,7 @@ class DeploymentController extends Controller
     // Available images for your vm 
     private $images = [
         'ubuntu-20-04-x64' => 'Ubuntu 20.04 (x64)',
-        'centos-7-x64' => 'CentOS 7 (x64)',
+        'rockylinux-8-x64' => 'Rocky Linux 8 (x64)',
         'debian-11-x64' => 'Debian 11 (x64)',
     ];
      
@@ -97,9 +97,9 @@ class DeploymentController extends Controller
          $sshFingerprint = $this->sanitizeAndVaidateSShKey($sshFingerprint,$validatedData['api_token']);
          
          
-         
+         //dd($validatedData['image']);
          //creating the droplet
-         $created_droplet = $this->createDroplet(
+         $returned_droplet_id = $this->createDroplet(
             $validatedData['api_token'],
             $validatedData['droplet_name'], 
             $validatedData['region'],
@@ -107,17 +107,19 @@ class DeploymentController extends Controller
             $validatedData['image'], 
             $sshFingerprint
          );
+         //dd($returned_droplet_id);
+
            // Step 6: Return success or failure
-           if ($created_droplet) {
-              return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
-           } else {
-              return redirect()->route('digitalocean.config')->with('error', 'Failed to create droplet.');
-           }
+          if ($returned_droplet_id) {
+            return  $this->storeDeployment($validatedData,$returned_droplet_id);
+          } else {
+            return view('dashboard.errors.deployment-error')->with('error', 'Failed to create droplet.');
+          }
         } catch (\Throwable $th) {
             //throw $th;
             // Handle exceptions and log errors
             Log::error('Droplet Deployment Error: ' . $th->getMessage());
-            return redirect()->route('digitalocean.config')->with('error', 'An error occurred while deploying the droplet.');
+            return view('dashboard.errors.deployment-error')->with('error', 'An error occurred while deploying the droplet.');
         }
             //return redirect()->route('error-not-laravel');
         
@@ -127,21 +129,25 @@ class DeploymentController extends Controller
     /**
      * function used for storing the deployment in our database.
      */
-    private function storeDeployment($validatedData)
-    {
-        return  DigitalOceanDroplet::create([
+    private function storeDeployment(array $validatedData, mixed $droplet_id)
+    {   
+        //dd($validatedData['api_token']);
+        //dd($droplet_id);
+        DigitalOceanDroplet::create([
             'user_id' => Auth::user()->id,
             'api_token' => $validatedData['api_token'],
-            'droplet_size' => $validatedData['droplet_size'],
-            'repository' => $validatedData['repository'],
-            'region' => $validatedData['region'],
-            'image' => $validatedData['image'],
-            'droplet_name' => $validatedData['droplet_name'],
-            'ip_address' => $this->ip_address,
-            'status' => 'pending',
+            'droplet_id' => $droplet_id,
+            //'droplet_size' => $validatedData['droplet_size'],
+            //'repository' => $validatedData['repository'],
+            //'region' => $validatedData['region'],
+            //'image' => $validatedData['image'],
+            //'droplet_name' => $validatedData['droplet_name'],
+            //'ip_address' => $this->ip_address,
+            //'status' => 'pending',
             
 
         ]);
+        return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
     }
     
     
@@ -257,8 +263,14 @@ class DeploymentController extends Controller
             ],
             'json' => $payload,
         ]);
-
-        return json_decode($response->getBody(), true); // Return droplet details
+        
+        //return the data of the droplet created.
+        $responseArray =  json_decode($response->getBody(), true); 
+        if (isset($responseArray['droplet']['id'])) {
+            return $responseArray['droplet']['id'];
+        }else {
+            return null;
+        }
     }
  
 
@@ -418,8 +430,22 @@ class DeploymentController extends Controller
         }*/
     }
 
+    public function getDropletById($user_id, $droplet_id, $api_token){
+        
+        if (!$api_token) {
+            return response()->json(['error' => 'DigitalOcean token not found'], 500);
+        }
+        $response = $this->client->get('https://api.digitalocean.com/v2/droplets/{$droplet_id}',[
+           'headers' => [
+                'Authorization' => 'Bearer ' . $api_token,
+                'Content-Type' => 'application/json',
+            ], 
+        ]);
 
-    
+        $data = json_decode($response->getBody(), true);
+        dd($data);
+
+    }
 
     //all about CI/CD
    /* public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {

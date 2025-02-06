@@ -48,7 +48,7 @@
                                 </span>
                             </td>
                             <td class="border border-gray-300 px-4 py-2">
-                                <a href="{{ route('droplet.show', $droplet->id) }}" class="text-blue-500 hover:underline">
+                                <a href="{{ route('droplet.show', $droplet->droplet_id) }}" class="text-blue-500 hover:underline">
                                     {{ __('Show Droplet') }}
                                 </a>
                             </td>

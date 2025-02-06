@@ -50,15 +50,20 @@ Route::get('/repo-error', function(){
 
 // everything relating to digitalOcean 
 // Show the DigitalOcean configuration form
-Route::get('/digitalocean/config', [DigitalOceanController::class, 'showForm'])
- ->name('digitalocean.config');
+Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanController::class, 'configureDeployment'])
+ ->name('deployments.configure');
  // Handle the form submission
 Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 ->name('digitalocean.store');
-Route::get('/digitalocean/show/droplet/{show}', [DigitalOceanController::class, 'show'])
+Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanController::class, 'getDroplet'])
  ->name('droplet.show');
-Route::post('/droplets/{id}/setup', [DigitalOceanController::class, 'setupProject'])
+Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'setupProject'])
 ->name('droplet.setup');
+
+
+
+
+
 
 //dashborad related stuffs 
 Route::get('/dashboard', [DashboardController::class, 'index'])

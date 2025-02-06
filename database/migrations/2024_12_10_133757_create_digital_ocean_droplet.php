@@ -14,14 +14,16 @@ return new class extends Migration
         Schema::create('digital_ocean_droplet', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->string('api_token');
-            $table->string('droplet_size');
-            $table->string('droplet_name');
-            $table->string('region')->nullable();
-            $table->string('repository');
-            $table->string('image')->nullable();
-            $table->string('ip_address');
-            $table->enum('status', ['pending', 'inprogress', 'active', 'failed'])->default('Pending');
+            $table->string('droplet_id');
+            //$table->string('droplet_size');
+            //$table->string('droplet_name');
+            //$table->string('region')->nullable();
+            //$table->string('repository');
+            //$table->string('image')->nullable();
+            //$table->string('ip_address');
+            //$table->enum('status', ['pending', 'inprogress', 'active', 'failed'])->default('Pending');
             $table->timestamps();
         });
     }

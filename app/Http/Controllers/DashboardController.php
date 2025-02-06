@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\DigitalOceanDroplet;
 use Illuminate\Container\Attributes\Auth;
+use GuzzleHttp\Client;
 
 class DashboardController extends Controller
 {
@@ -21,9 +22,10 @@ class DashboardController extends Controller
     public function apiToken(){
         return view('dashboard.apiToken.index-api-token');
     }
-
+   
+    //listing all droplet 
     public function deployment(){
-                
+        
         try {
             $user_id = auth()->id();
             $droplets = DigitalOceanDroplet::where('user_id', $user_id)->get();
@@ -33,6 +35,9 @@ class DashboardController extends Controller
             ->with('error', 'Failed to fetch droplets: ' . $th->getMessage());
         }
     }
+
+
+    
 }
 
 

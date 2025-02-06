@@ -20,7 +20,7 @@
                     <h2 class="text-2xl font-semibold text-red-600">Deployments</h2>
                     <p class="text-gray-600 mt-2">Track and manage your site deployments efficiently.</p>
                     <a href="{{ route('deployments.index') }}" class="inline-block mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
-                        View Deployments
+                        View Deployments  kkk
                     </a>
                 </div>
                 <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-lg text-center">

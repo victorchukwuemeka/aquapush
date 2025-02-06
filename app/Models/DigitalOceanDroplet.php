@@ -14,13 +14,14 @@ class DigitalOceanDroplet extends Model
     protected $fillable = [
         'user_id',
         'api_token',
-        'droplet_size',
-        'droplet_name',
-        'image',
-        'repository',
-        'region',
-        'ip_address',
-        'status',
+        'droplet_id',
+        //'droplet_size',
+        //'droplet_name',
+        //'image',
+        //'repository',
+        //'region',
+        //'ip_address',
+        //'status',
     ];
 
     public function get_id(){
