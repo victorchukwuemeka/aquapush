@@ -11,6 +11,8 @@ use phpseclib3\Net\SSH2;
 
 class DigitalOceanController extends Controller
 {   
+   
+    //private $ssh = new 
 
     
     public function getDroplet($droplet_id){
@@ -74,7 +76,7 @@ class DigitalOceanController extends Controller
             return ['success' => true, 'ssh' => $this->getActiveSSHConnection($droplet)];
         }
 
-        
+        //dd($droplet->ip_address);
         // Connect to the Droplet via SSH
         $ssh = new SSH2($droplet->ip_address);
         if (!$ssh->login($droplet->ssh_username, $droplet->ssh_private_key)) {
@@ -91,22 +93,33 @@ class DigitalOceanController extends Controller
     }
 
 
-    public function setupProoject(Request $request, $droplet_id){
-        
-         $this->validateSetupRequest($request);
+    public function setupProject(Request $request, $droplet_id){
+        //dd($droplet_id);
+        //dd($request);
+        //$this->validateSetupRequest($request);
 
         // Establish SSH Connection
-        $connection = $this->connectToDroplet($droplet_id);
+        /*$connection = $this->connectToDroplet($droplet_id);
         if (isset($connection['error'])) {
             return back()->withErrors(['ssh_error' => $connection['error']]);
+        }*/
+        
+        //$ssh = $connection['ssh'];
+        $digital_ocean_droplet = DigitalOceanDroplet::where('id', $droplet_id)->first();
+        //dd($digital_ocean_droplet);
+        $host = $digital_ocean_droplet->ip_address;
+        $port = 22;
+        
+        $ssh = new SSH2($host,$port);
+        //dd($ssh);
+        if($this->installDependencies($ssh, $request)){
+            dd('worked');
         }
-        
-        $ssh = $connection['ssh'];
-        
-        $this->installDependencies($ssh, $request);
+
         $this->setupWebServerAndDatabase($ssh, $request);
         $this->deployApplication($ssh, $request);
-           
+
+        return redirect()->back()->with('success', 'Project setup completed successfully!');
        
     }
     
@@ -117,14 +130,11 @@ class DigitalOceanController extends Controller
             'php_version' => 'required|string',
             'web_server' => 'required|string',
             'database' => 'nullable|string',
-            'db_name' => 'nullable|string',
-            'db_user' => 'nullable|string',
-            'db_password' => 'nullable|string',
-            'npm_install' => 'nullable|boolean',
+            //'npm_install' => 'nullable|boolean',
         ]);
     }
 
-    private function installDependencies($ssh, $request){
+    /*private function installDependencies($ssh, $request):bool{
         
         // Step 1: Install PHP
         $ssh->exec("sudo apt-get update");
@@ -138,10 +148,59 @@ class DigitalOceanController extends Controller
             $ssh->exec("sudo mysql -e \"GRANT ALL PRIVILEGES ON {$request->input('db_name')}.* TO '{$request->input('db_user')}'@'localhost';\"");
             $ssh->exec("sudo mysql -e \"FLUSH PRIVILEGES;\"");
         }
+        
+    }*/
+
+    private function installDependencies($ssh, $request): bool {
+        // Step 1: Update package list and upgrade
+        if ($ssh->exec("sudo apt-get update") !== 0) {
+            dd('kkk');
+            return false; // Return false if update fails
+        }
+    
+        // Step 2: Install PHP
+        if ($ssh->exec("sudo apt-get install -y php{$request->input('php_version')}") !== 0) {
+            return false; // Return false if PHP installation fails
+        }
+    
+        // Step 3: Install and Setup Database (MariaDB)
+        if ($request->input('database') === 'mariadb') {
+            // Install MariaDB
+            if ($ssh->exec("sudo apt-get install -y mariadb-server") !== 0) {
+                return false; // Return false if MariaDB installation fails
+            }
+    
+            // Create database and user
+            $dbName = $request->input('db_name');
+            $dbUser = $request->input('db_user');
+            $dbPassword = $request->input('db_password');
+    
+            // Create database
+            if ($ssh->exec("sudo mysql -e \"CREATE DATABASE {$dbName};\"") !== 0) {
+                return false; // Return false if database creation fails
+            }
+    
+            // Create user and set privileges
+            if ($ssh->exec("sudo mysql -e \"CREATE USER '{$dbUser}'@'localhost' IDENTIFIED BY '{$dbPassword}';\"") !== 0) {
+                return false; // Return false if user creation fails
+            }
+    
+            if ($ssh->exec("sudo mysql -e \"GRANT ALL PRIVILEGES ON {$dbName}.* TO '{$dbUser}'@'localhost';\"") !== 0) {
+                return false; // Return false if granting privileges fails
+            }
+    
+            // Flush privileges
+            if ($ssh->exec("sudo mysql -e \"FLUSH PRIVILEGES;\"") !== 0) {
+                return false; // Return false if flushing privileges fails
+            }
+        }
+    
+        return true; // Everything worked, return true
     }
+    
 
 
-    // 3️⃣ Setup Web Server and Deploy Laravel App
+    //  Setup Web Server and Deploy Laravel App
     private function setupWebServerAndDatabase($ssh, $request){
         // Step 3: Clone GitHub Repository
         $ssh->exec("git clone {$request->input('repository_url')} /var/www/laravel");

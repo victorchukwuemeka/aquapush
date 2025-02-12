@@ -15,6 +15,7 @@ class DigitalOceanDroplet extends Model
         'user_id',
         'api_token',
         'droplet_id',
+        'ip_address',
         //'droplet_size',
         //'droplet_name',
         //'image',

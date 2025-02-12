@@ -9,6 +9,8 @@ use GuzzleHttp\Client;
 use App\Models\DigitalOceanDroplet;
 use App\Events\DeploymentStatusUpdated;
 use Illuminate\Support\Facades\Log;
+use App\Services\CloudInitService;
+
 
 class DeploymentController extends Controller
 {   
@@ -22,8 +24,10 @@ class DeploymentController extends Controller
 
     private $client;
 
-    public function __construct()
-    {
+    protected $cloud_init_service;
+
+    public function __construct(CloudInitService $cloudInitService){
+        $this->cloud_init_service = $cloudInitService;
         $this->client = new Client();
     }
 
@@ -75,10 +79,10 @@ class DeploymentController extends Controller
     }
 
     public function deploy(Request $request){
-        try {
+        //try {
             // Validate the incoming request data
             $validatedData = $this->validateDeploymentData($request);
-        
+             //dd($validatedData);
            // Store the token and droplet size in session  as needed
            // For demonstration, we're using the session
            session([
@@ -88,6 +92,7 @@ class DeploymentController extends Controller
 
          // Check droplet limit so you will not push more droplet.
          $dropletLimitCheck = $this->checkDropletLimit($validatedData['api_token']);
+         //dd($dropletLimitCheck);
          if ($dropletLimitCheck['status'] === 'error') {
              return redirect()->route('digitalocean.config')->with('error', $dropletLimitCheck['message']);
          }
@@ -115,12 +120,12 @@ class DeploymentController extends Controller
           } else {
             return view('dashboard.errors.deployment-error')->with('error', 'Failed to create droplet.');
           }
-        } catch (\Throwable $th) {
+       // } catch (\Throwable $th) {
             //throw $th;
             // Handle exceptions and log errors
-            Log::error('Droplet Deployment Error: ' . $th->getMessage());
-            return view('dashboard.errors.deployment-error')->with('error', 'An error occurred while deploying the droplet.');
-        }
+       //     Log::error('Droplet Deployment Error: ' . $th->getMessage());
+       //     return view('dashboard.errors.deployment-error')->with('error', 'An error occurred while deploying the droplet.');
+        //}
             //return redirect()->route('error-not-laravel');
         
     }
@@ -133,21 +138,27 @@ class DeploymentController extends Controller
     {   
         //dd($validatedData['api_token']);
         //dd($droplet_id);
-        DigitalOceanDroplet::create([
-            'user_id' => Auth::user()->id,
-            'api_token' => $validatedData['api_token'],
-            'droplet_id' => $droplet_id,
-            //'droplet_size' => $validatedData['droplet_size'],
-            //'repository' => $validatedData['repository'],
-            //'region' => $validatedData['region'],
-            //'image' => $validatedData['image'],
-            //'droplet_name' => $validatedData['droplet_name'],
-            //'ip_address' => $this->ip_address,
-            //'status' => 'pending',
-            
-
-        ]);
-        return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
+        if ($this->ip_address) {
+            DigitalOceanDroplet::create([
+                'user_id' => Auth::user()->id,
+                'api_token' => $validatedData['api_token'],
+                'droplet_id' => $droplet_id,
+                'ip_address' => $this->ip_address,
+    
+                //'droplet_size' => $validatedData['droplet_size'],
+                //'repository' => $validatedData['repository'],
+                //'region' => $validatedData['region'],
+                //'image' => $validatedData['image'],
+                //'droplet_name' => $validatedData['droplet_name'],
+                //'ip_address' => $this->ip_address,
+                //'status' => 'pending',
+                
+    
+            ]);
+            return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
+        }else{
+         return 'empty ip';   
+        }
     }
     
     
@@ -233,6 +244,7 @@ class DeploymentController extends Controller
     public function createDroplet($apiToken, $dropletName, $region, $size, $image, $publicKey = null)
     {  
         //dd($publicKey);
+        //dd($apiToken);
         $sshFingerprint = null;
 
         // Check or add SSH key only if a public key is provided
@@ -241,6 +253,9 @@ class DeploymentController extends Controller
             //dd($sshFingerprint);
         }
 
+        $cloud_init_script = $this->cloud_init_service->generateCloudInitScript();
+        //dd($cloud_init_script);
+
         // Prepare droplet creation payload
         $payload = [
             'name' => $dropletName,
@@ -248,6 +263,7 @@ class DeploymentController extends Controller
             'size' => $size,
             'image' => $image, // Example: 'ubuntu-20-04-x64'
             'backups' => false,
+            'user_data' => $cloud_init_script,
         ];
 
         // Add SSH keys to the payload only if a fingerprint exists
@@ -264,15 +280,24 @@ class DeploymentController extends Controller
             'json' => $payload,
         ]);
         
+                      
         //return the data of the droplet created.
         $responseArray =  json_decode($response->getBody(), true); 
+        $droplet_id = $responseArray['droplet']['id'];
+        
+        //dd($apiToken);
+        sleep(5);
+        $this->ip_address = $this->getIpAddress($droplet_id, $apiToken);
+        
+        //dd($this->ip_address);
+        //dd($responseArray['droplet']['id']);
         if (isset($responseArray['droplet']['id'])) {
             return $responseArray['droplet']['id'];
         }else {
             return null;
         }
     }
- 
+    
 
     private function sanitizeAndVaidateSShKey($ssh_key, $api_token){
         $ssh_key = trim($ssh_key);
@@ -289,21 +314,33 @@ class DeploymentController extends Controller
      * this function is for getting the ip address.
      */
     public function getIpAddress($dropletId, $apiToken){
-        //$client = new Client();
-        $response_for_get_call = $this->client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}",[
-            'headers'=>[
-                'Authorization' => 'Bearer'. $apiToken,
-                'Context-type' => 'application/json',
-            ]
-        ]);
-        $body_from_get_call = json_decode($response_for_get_call->getBody()->getContents(), true);
-        $networks = $body_from_get_call['droplet']['networks']['v4'];
+        $max_attempt = 10;
+        $attempt = 0;
 
-        foreach ($networks as $network) {
-            if ($network['type'] === 'public') {
-                return $this->ip_address = $network['ip_address'];
+        //dd($dropletId);
+        //$client = new Client();
+        while ($attempt < $max_attempt) {
+            $response_for_get_call = $this->client->get("https://api.digitalocean.com/v2/droplets/{$dropletId}",[
+                'headers'=>[
+                    'Authorization' => 'Bearer '. $apiToken,
+                    'Content-type' => 'application/json',
+                ]
+            ]);
+            //dd($response_for_get_call);
+            $body_from_get_call = json_decode($response_for_get_call->getBody()->getContents(), true);
+            $networks = $body_from_get_call['droplet']['networks']['v4'];
+            //dd($networks);
+    
+            foreach ($networks as $network) {
+                if ($network['type'] === 'public') {
+                    return $this->ip_address = $network['ip_address'];
+                }
             }
+
+            sleep(5);
+            $attempt ++;
         }
+        return 0;
 
     }
 
@@ -382,13 +419,13 @@ class DeploymentController extends Controller
   
  
     //handling the amount of droplet in digitalOcean 
-    private function checkDropletLimit($apiToken)
-    {    
+   private function checkDropletLimit($apiToken)
+   {    
         //dd($apiToken);
         //try {
-            $client = new Client();
+            //$client = new Client();
             //dd($client);
-            $response = $client->get('https://api.digitalocean.com/v2/account', [
+            $response = $this->client->get('https://api.digitalocean.com/v2/account', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiToken,
                 ],
@@ -400,7 +437,7 @@ class DeploymentController extends Controller
             //dd($dropletLimit);
             //dd($data['account']['droplet_count']);
             // Step 2: Get the current number of droplets
-            $dropletsResponse = $client->get('https://api.digitalocean.com/v2/droplets', [
+            $dropletsResponse = $this->client->get('https://api.digitalocean.com/v2/droplets', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $apiToken,
                 ],
@@ -443,9 +480,12 @@ class DeploymentController extends Controller
         ]);
 
         $data = json_decode($response->getBody(), true);
-        dd($data);
+        //dd($data);
 
     }
+
+
+
 
     //all about CI/CD
    /* public function addWorkflowFileToRepo($githubToken, $repoOwner, $repoName, $workflowContent) {
