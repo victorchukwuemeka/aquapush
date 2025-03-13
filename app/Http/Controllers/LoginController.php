@@ -43,9 +43,15 @@ class LoginController extends Controller
          //dd('victorsssss');
         // $githubUser = Socialite::driver('github')->user();
         $githubUser = Socialite::driver('github')->stateless()->user();
-        //dd($githubUser->token);
+
+        // Ensure email and name are always present
+        $email = $githubUser->getEmail();
+        $name = $githubUser->getName() ?? $githubUser->getNickname() ?? 'GitHub User';
+        $avatar = $githubUser->getAvatar() ?? 'default-avatar.png';
+        $token = encrypt($githubUser->token);
+        $refreshToken = $githubUser->refreshToken ? encrypt($githubUser->refreshToken) : null;
         
-       try { 
+      // try { 
             
             //check if user exist
             $user = User::where('github_id', $githubUser->id)->first();
@@ -65,29 +71,32 @@ class LoginController extends Controller
                  // If the email exists but GitHub ID doesn't, update the user with GitHub data
                  $user_with_email->update([
                     'github_id' => $githubUser->id,
-                    'github_token' => encrypt($githubUser->token),
-                    'github_refresh_token' => encrypt($githubUser->refreshToken),
-                    'avatar' => $githubUser->avatar,
+                    'github_token' => encrypt($token),
+                    'github_refresh_token' => encrypt($refreshToken),
+                    'avatar' => $avatar,
                 ]);
                 Auth::login($user_with_email);
             }else {
                 // create user 
-                $user = User::create(
-                    ['github_id' => $githubUser->id,],
-                    [   
-                        'name' => $githubUser->name,
-                        'email' => $githubUser->email,
-                        'github_token'=> encrypt($githubUser->token),
-                        'github_refresh_token' => encrypt($githubUser->refreshToken),
-                        'avatar' => $githubUser->avatar,
-                    ]
-                );
-                Auth::login($user);
+                if ($githubUser->email) {
+                    $user = User::create(
+                        ['github_id' => $githubUser->id,
+                         'name' => $name,
+                         'email' => $email,
+                         'github_token'=> encrypt($token),
+                         'github_refresh_token' => encrypt($refreshToken),
+                         'avatar' => $avatar,
+                        ]
+                    );
+                    Auth::login($user);
+                }else {
+                    return dd($githubUser);
+                }
             }
             return redirect()->route('dashboard');
-        } catch (\Throwable $e) {
+       // } catch (\Throwable $e) {
             Log::error('GitHub login failed: ' . $e->getMessage());
-            return redirect()->route("login-error")->with('error', 'Unable to login with GitHub.');
-        }
+            return redirect()->route("login-error")->with('error', 'Unable  futo login with GitHub.');
+       // }
     }
 }

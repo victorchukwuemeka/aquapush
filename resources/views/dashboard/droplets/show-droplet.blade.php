@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="container mx-auto p-4">
-        <div class="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-8">
+        <div class="flex flex-col lg:flex-row space- y-6 lg:space-y-0 lg:space-x-8">
             <!-- Sidebar -->
             <div class="w-full lg:w-1/4 bg-red-600 text-white p-6 rounded-xl shadow-xl">
                 @include('partials.sidebar')
@@ -39,6 +39,7 @@
                                     <li class="flex justify-between text-gray-700">
                                         <span class="font-medium">Droplet ID:</span>
                                         <span>{{ $dropletData['droplet']['id'] }}</span>
+                                        
                                     </li>
                                     <li class="flex justify-between text-gray-700">
                                         <span class="font-medium">Name:</span>
@@ -85,6 +86,15 @@
                                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
                                 Deploy New Project
                             </a>
+
+                            <!-- Delete Button -->
+                            <form action="{{ route('droplets.delete', ['droplet_id' => $dropletData['droplet']['id']]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this droplet? This action cannot be undone.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900 transition">
+                                    Delete Droplet
+                                </button>
+                            </form>
                         </div>
                     </div>
                 @endisset

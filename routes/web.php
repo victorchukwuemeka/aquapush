@@ -57,9 +57,10 @@ Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 ->name('digitalocean.store');
 Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanController::class, 'getDroplet'])
  ->name('droplet.show');
-Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'setupProject'])
+Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'addRepoToDroplet'])
 ->name('droplet.setup');
-
+Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteDroplet'])
+  ->name('droplets.delete');
 
 
 
@@ -75,6 +76,8 @@ Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])
 ->name('account.settings.index');
 
+
+
 //use App\Http\Controllers\DropletController;
 
 // Single Droplet View
@@ -85,3 +88,27 @@ Route::get('account/setting', [DashboardController::class, 'accountSetting'])
 //Route::get('/account/settings', [AccountController::class, 'edit'])->name('account.settings');
 
 
+
+
+Route::get('/check-env', function () {
+    return [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect_url' => env('GITHUB_REDIRECT_URL'),
+    ];
+});
+
+
+use Dotenv\Dotenv;
+
+
+Route::get('/debug-env', function () {
+    $dotenv = Dotenv::createImmutable(base_path());
+    $dotenv->load();
+
+    return [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect_url' => env('GITHUB_REDIRECT_URL'),
+    ];
+});
