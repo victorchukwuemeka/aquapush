@@ -52,8 +52,7 @@ write_files:
 
               chdir(\$projectDir);
               if (file_exists('composer.json')) {
-                  // Use full path to composer
-                  passthru('sudo -u www-data /usr/local/bin/composer install --no-dev --optimize-autoloader 2>&1', \$returnCode);
+                  passthru('sudo -u www-data composer install --no-dev --optimize-autoloader 2>&1', \$returnCode);
                   if (\$returnCode !== 0) {
                       throw new \RuntimeException("Composer install failed");
                   }
@@ -108,17 +107,8 @@ runcmd:
         php8.3-bcmath php8.3-intl php8.3-opcache \
         apache2 libapache2-mod-php8.3 git unzip
 
-    # Install Composer globally
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
     chmod +x /usr/local/bin/composer
-    
-    # Add composer to www-data's PATH
-    echo 'export PATH=\$PATH:/usr/local/bin' >> /etc/profile
-    echo 'export PATH=\$PATH:/usr/local/bin' >> /var/www/.bashrc
-    
-    # Make sure www-data can access the profile
-    chown www-data:www-data /var/www/.bashrc
-    chmod 644 /var/www/.bashrc
 
     a2enmod rewrite
     systemctl enable apache2
