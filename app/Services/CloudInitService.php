@@ -219,10 +219,35 @@ runcmd:
     echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /bin/systemctl restart apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
-    # 7. FINAL APACHE CONFIG
+    # 7.  APACHE CONFIG
     a2enmod rewrite >> $LOG_FILE 2>&1
     systemctl restart apache2 >> $LOG_FILE 2>&1
 
+    #8. INSTALL MARIADB AND CONFIGURE IT
+    apt-get install -y mariadb-server mariadb-client || apt-get install -y mysql-server mysql-client
+
+    # Start and verify
+    systemctl start mariadb || systemctl start mysql
+    systemctl enable mariadb || systemctl enable mysql
+    mysql --version || mariadb --version
+
+    #automate the installation security
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_strong_password';"
+    mysql -e "DELETE FROM mysql.user WHERE User='';"
+    mysql -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+    mysql -e "DROP DATABASE IF EXISTS test;"
+    mysql -e "FLUSH PRIVILEGES;"
+    
+    #create the database 
+    mysql -e "CREATE DATABASE aquapush;"
+    mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
+    
+    #update the .env 
+    sed -i "s/DB_HOST=.*/DB_HOST=127.0.0.1/" /var/www/html/repo/.env
+    sed -i "s/DB_DATABASE=.*/DB_DATABASE=aquapush/" /var/www/html/repo/.env 
+    sed -i "s/DB_USERNAME=.*/DB_USERNAME=aquapush_user/" /var/www/html/repo/.env
+    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=another_strong_password/" /var/www/html/repo/.env
+    
     # 8. VERIFICATION
     echo "==== VERIFICATION ====" >> $LOG_FILE
     {
