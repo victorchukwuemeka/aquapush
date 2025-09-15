@@ -278,8 +278,22 @@ runcmd:
     mysql -e "CREATE DATABASE aquapush;"
     mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
     
-    
-    
+    # Laravel VirtualHost configuration
+    cat <<EOF >/etc/apache2/sites-available/laravel.conf
+    <VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html/repo/public
+
+        <Directory /var/www/html/repo/public>
+            AllowOverride All
+            Require all granted
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/laravel_error.log
+        CustomLog ${APACHE_LOG_DIR}/laravel_access.log combined
+    </VirtualHost>
+    EOF
+
     # 8. VERIFICATION
     echo "==== VERIFICATION ====" >> $LOG_FILE
     {
