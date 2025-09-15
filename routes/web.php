@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
 
 
+
 //home page 
 Route::get('/', [PageController::class, 'landingPage'])->name('home');
 
@@ -52,6 +53,9 @@ Route::get('/repo-error', function(){
 // Show the DigitalOcean configuration form
 Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanController::class, 'configureDeployment'])
  ->name('deployments.configure');
+
+
+ 
  // Handle the form submission
 Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 ->name('digitalocean.store');
@@ -112,3 +116,4 @@ Route::get('/debug-env', function () {
         'redirect_url' => env('GITHUB_REDIRECT_URL'),
     ];
 });
+

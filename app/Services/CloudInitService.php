@@ -19,19 +19,56 @@ write_files:
       <?php
        $API_KEY = 'YOUR_SECRET_KEY';
        $headers = getallheaders();
+        
+       //configure the env from  env.example
+       function setupProject($projectDir){
+        
+         $envFile = "$projectDir/.env";
+         $envExample = "$projectDir/.env.example";
 
+         if(!file_exists($envFile) && file_exists($envExample)){
+           if (!copy($envExample, $envFile)) {
+             throw new RuntimeException("Failed to copy .env.example to .env");
+           }
+         }
+
+         if(file_exists($envFile)){
+              $envContent = file_get_contents($envFile);
+              $envContent = preg_replace([
+                '/DB_HOST=.*/',
+                '/DB_DATABASE=.*/',
+                '/DB_USERNAME=.*/',
+                '/DB_PASSWORD=.*/'
+              ], [
+                'DB_HOST=127.0.0.1',
+                'DB_DATABASE=aquapush',
+                'DB_USERNAME=aquapush_user',
+                'DB_PASSWORD=another_strong_password'
+             ], $envContent);
+             
+             if(file_put_contents($envFile, $envContent) === false){
+              throw new RuntimeException("failed to write to .env");
+             };
+         }else{
+           throw new RuntimeException(".env file does not exist and could not be created");
+         }
+       }
+      
+       //desplay error messages 
       function logMessage($message) {
           $logFile = '/var/www/html/install_debug.log';
           $timestamp = date('Y-m-d H:i:s');
           file_put_contents($logFile, "[$timestamp] $message" . PHP_EOL, FILE_APPEND | LOCK_EX);
       }
-
+       
+      //validate the api key
       if (!isset($headers['X-API-KEY']) || $headers['X-API-KEY'] !== $API_KEY) {
           http_response_code(403);
           logMessage("Unauthorized access attempt from IP: " . $_SERVER['REMOTE_ADDR']);
           die(json_encode(["status" => "error", "message" => "Unauthorized"]));
       }
 
+       //query the api with your git url
       if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $data = json_decode(file_get_contents('php://input'), true);
           if (json_last_error() !== JSON_ERROR_NONE || empty($data['repo'])) {
@@ -59,7 +96,10 @@ write_files:
                   throw new \RuntimeException("Git clone failed: " . implode("\n", $output));
               }
 
-              // 3. Composer install
+              // 3. Setup .env configuration
+              setupProject($projectDir);
+
+              // 4. Composer install
               chdir($projectDir);
               if (file_exists('composer.json')) {
                   putenv('PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin');
@@ -70,13 +110,9 @@ write_files:
                   }
               }
 
-              // 4. Laravel setup (if artisan exists)
+
+              // 5. Laravel setup (if artisan exists)
               if (file_exists('artisan')) {
-                  if (!file_exists('.env') && file_exists('.env.example')) {
-                      if (!copy('.env.example', '.env')) {
-                          throw new \RuntimeException("Failed to create .env file");
-                      }
-                  }
                   
                   exec('sudo -u www-data php artisan key:generate --force 2>&1', $output, $returnCode);
                   if ($returnCode !== 0) {
@@ -242,11 +278,7 @@ runcmd:
     mysql -e "CREATE DATABASE aquapush;"
     mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
     
-    #update the .env 
-    sed -i "s/DB_HOST=.*/DB_HOST=127.0.0.1/" /var/www/html/repo/.env
-    sed -i "s/DB_DATABASE=.*/DB_DATABASE=aquapush/" /var/www/html/repo/.env 
-    sed -i "s/DB_USERNAME=.*/DB_USERNAME=aquapush_user/" /var/www/html/repo/.env
-    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=another_strong_password/" /var/www/html/repo/.env
+    
     
     # 8. VERIFICATION
     echo "==== VERIFICATION ====" >> $LOG_FILE

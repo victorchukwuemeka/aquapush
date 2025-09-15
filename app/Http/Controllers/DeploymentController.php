@@ -50,7 +50,7 @@ class DeploymentController extends Controller
 
     // Available images for your vm 
     private $images = [
-        'ubuntu-20-04-x64' => 'Ubuntu 20.04 (x64)',
+        'ubuntu-22-04-x64' => 'Ubuntu 22.04 (x64)',
         'rockylinux-8-x64' => 'Rocky Linux 8 (x64)',
         'debian-11-x64' => 'Debian 11 (x64)',
     ];
@@ -80,6 +80,7 @@ class DeploymentController extends Controller
 
     public function deploy(Request $request){
         //try {
+            //dd($request);
             // Validate the incoming request data
             $validatedData = $this->validateDeploymentData($request);
              //dd($validatedData);
@@ -130,6 +131,7 @@ class DeploymentController extends Controller
         
     }
     
+
     
     /**
      * function used for storing the deployment in our database.
@@ -346,6 +348,7 @@ class DeploymentController extends Controller
 
     /**
      * using the deployment status to monitor it .
+     * 
      */
     public function pollDropletStatus($apiToken, $dropletId){
         $client = new Client();
@@ -472,6 +475,7 @@ class DeploymentController extends Controller
         if (!$api_token) {
             return response()->json(['error' => 'DigitalOcean token not found'], 500);
         }
+
         $response = $this->client->get('https://api.digitalocean.com/v2/droplets/{$droplet_id}',[
            'headers' => [
                 'Authorization' => 'Bearer ' . $api_token,
@@ -483,7 +487,6 @@ class DeploymentController extends Controller
         //dd($data);
 
     }
-
 
 
 
