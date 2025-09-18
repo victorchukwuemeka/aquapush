@@ -129,6 +129,19 @@ write_files:
               exec('sudo chown -R www-data:www-data ' . escapeshellarg($projectDir) . ' 2>&1');
               exec('sudo find ' . escapeshellarg($projectDir) . ' -type d -exec chmod 750 {} \\; 2>&1');
               exec('sudo find ' . escapeshellarg($projectDir) . ' -type f -exec chmod 640 {} \\; 2>&1');
+              
+              //change the apache virtual host 
+              //enable the laravel site.
+              exec('sudo a2ensite laravel.conf 2>&1', $output, $returnCode);
+              if($returnCode !== 0){
+                throw new \RuntimeException("Enabling Laravel site failed: " . implode("\n", $output));
+              }
+              
+              //disable the default apache2 virtual 
+              exec('sudo a2dissite 000-default.conf 2>&1', $output, $returnCode);
+              if ($returnCode !== 0) {
+                throw new \RuntimeException("Disabling default site failed: " . implode("\n", $output));
+              }
 
               // 6. Restart Apache
               exec('sudo systemctl restart apache2 2>&1', $output, $returnCode);
@@ -252,7 +265,7 @@ runcmd:
     chmod -R 775 /var/www
 
     # 6. CONFIGURE SUDO
-    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /bin/systemctl restart apache2' > /etc/sudoers.d/www-data
+    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown,/usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
     # 7.  APACHE CONFIG
@@ -293,6 +306,10 @@ runcmd:
         CustomLog ${APACHE_LOG_DIR}/laravel_access.log combined
     </VirtualHost>
     EOF
+
+    #apache can rewrite on fly 
+    sudo a2enmod rewrite
+    sudo systemctl restart apache2
 
     # 8. VERIFICATION
     echo "==== VERIFICATION ====" >> $LOG_FILE
