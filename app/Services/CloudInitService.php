@@ -132,22 +132,26 @@ write_files:
               
               //change the apache virtual host 
               //enable the laravel site.
-              exec('sudo a2ensite laravel.conf 2>&1', $output, $returnCode);
-              if($returnCode !== 0){
-                throw new \RuntimeException("Enabling Laravel site failed: " . implode("\n", $output));
-              }
+              //exec('sudo a2ensite laravel.conf 2>&1', $output, $returnCode);
+              //if($returnCode !== 0){
+                //throw new \RuntimeException("Enabling Laravel site failed: " . implode("\n", $output));
+              //}
               
               //disable the default apache2 virtual 
-              exec('sudo a2dissite 000-default.conf 2>&1', $output, $returnCode);
-              if ($returnCode !== 0) {
-                throw new \RuntimeException("Disabling default site failed: " . implode("\n", $output));
-              }
+              //exec('sudo a2dissite 000-default.conf 2>&1', $output, $returnCode);
+              //if ($returnCode !== 0) {
+                //throw new \RuntimeException("Disabling default site failed: " . implode("\n", $output));
+              //}
 
               // 6. Restart Apache
-              exec('sudo systemctl restart apache2 2>&1', $output, $returnCode);
-              if ($returnCode !== 0) {
-                  throw new \RuntimeException("Apache restart failed: " . implode("\n", $output));
-              }
+              //exec('sudo systemctl restart apache2 2>&1', $output, $returnCode);
+              //if ($returnCode !== 0) {
+                  //throw new \RuntimeException("Apache restart failed: " . implode("\n", $output));
+              //}
+
+              // swap virtual host in the background (after response)
+              exec('nohup bash -c "sleep 2 && sudo /usr/sbin/a2ensite laravel.conf && sudo /usr/sbin/a2dissite 000-default.conf && sudo systemctl reload apache2" > /tmp/vhost_debug.log 2>&1 &');
+              //exec('nohup bash -c "sleep 2 && sudo /usr/sbin/a2ensite laravel.conf && sudo /usr/sbin/a2dissite 000-default.conf && sudo /bin/systemctl reload apache2" > /dev/null 2>&1 &');
 
               echo json_encode(["status" => "success", "message" => "Setup completed"]);
               
@@ -265,7 +269,7 @@ runcmd:
     chmod -R 775 /var/www
 
     # 6. CONFIGURE SUDO
-    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown,/usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2' > /etc/sudoers.d/www-data
+    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2,  /bin/systemctl relead apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
     # 7.  APACHE CONFIG
@@ -288,9 +292,11 @@ runcmd:
     mysql -e "FLUSH PRIVILEGES;"
     
     #create the database 
-    mysql -e "CREATE DATABASE aquapush;"
-    mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
-    
+    #mysql -e "CREATE DATABASE aquapush;"
+    #mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
+    mysql -u root -pyour_strong_password -e "CREATE DATABASE aquapush;"
+    mysql -u root -pyour_strong_password -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
+    mysql -u root -pyour_strong_password -e "FLUSH PRIVILEGES;"
     # Laravel VirtualHost configuration
     cat <<EOF >/etc/apache2/sites-available/laravel.conf
     <VirtualHost *:80>
@@ -308,8 +314,8 @@ runcmd:
     EOF
 
     #apache can rewrite on fly 
-    sudo a2enmod rewrite
-    sudo systemctl restart apache2
+    #sudo a2enmod rewrite
+    #sudo systemctl restart apache2
 
     # 8. VERIFICATION
     echo "==== VERIFICATION ====" >> $LOG_FILE
