@@ -104,7 +104,7 @@ write_files:
               if (file_exists('composer.json')) {
                   putenv('PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin');
                   putenv('HOME=/var/www');
-                  exec('sudo -u www-data /usr/local/bin/composer install --no-dev --optimize-autoloader 2>&1', $output, $returnCode);
+                  exec('sudo -u www-data /usr/local/bin/composer install --no-dev --optimize-autoloader  --ignore-platform-reqs 2>&1', $output, $returnCode);
                   if ($returnCode !== 0) {
                       throw new \RuntimeException("Composer install failed: " . implode("\n", $output));
                   }
@@ -174,7 +174,12 @@ runcmd:
     echo "==== INSTALLING APACHE ====" >> $LOG_FILE
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y >> $LOG_FILE 2>&1
-    apt-get install -y apache2 libapache2-mod-php >> $LOG_FILE 2>&1
+    apt-get install -y apache2 libapache2-mod-php8.3 >> $LOG_FILE 2>&1
+
+    # Force Apache to use PHP 8.3 instead of the system default
+    a2dismod php8.1 >> $LOG_FILE 2>&1 || true
+    a2enmod php8.3 >> $LOG_FILE 2>&1
+    systemctl restart apache2 >> $LOG_FILE 2>&1
     
     # Verify Apache
     if ! systemctl is-active apache2 >> $LOG_FILE 2>&1; then
@@ -269,7 +274,7 @@ runcmd:
     chmod -R 775 /var/www
 
     # 6. CONFIGURE SUDO
-    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2,  /bin/systemctl relead apache2' > /etc/sudoers.d/www-data
+    echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2,  /bin/systemctl reload apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
     # 7.  APACHE CONFIG
