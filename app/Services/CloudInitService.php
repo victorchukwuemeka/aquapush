@@ -125,6 +125,15 @@ write_files:
                   }
               }
 
+              if (file_exists("$projectDir/vite.config.js") || file_exists("$projectDir/vite.config.ts")) {
+                exec('curl -fsSL https://deb.nodesource.com/setup_20.x | bash -', $output, $returnCode);
+                exec('apt-get install -y nodejs', $output, $returnCode);
+
+                exec('sudo -u www-data npm install --prefix ' . escapeshellarg($projectDir) . ' 2>&1', $output, $returnCode);
+                exec('sudo -u www-data npm run build --prefix ' . escapeshellarg($projectDir) . ' 2>&1', $output, $returnCode);
+             }
+
+
               // 5. Set permissions
               exec('sudo chown -R www-data:www-data ' . escapeshellarg($projectDir) . ' 2>&1');
               exec('sudo find ' . escapeshellarg($projectDir) . ' -type d -exec chmod 750 {} \\; 2>&1');
