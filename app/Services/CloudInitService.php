@@ -169,7 +169,12 @@ runcmd:
     mkdir -p /var/log
     LOG_FILE="/var/log/cloud-init-output.log"
     echo "==== STARTING INSTALLATION ====" > $LOG_FILE
-
+    
+    # Enable PHP repo first
+    apt-get install -y software-properties-common >> $LOG_FILE 2>&1
+    add-apt-repository ppa:ondrej/php -y >> $LOG_FILE 2>&1
+    apt-get update -y >> $LOG_FILE 2>&1
+    
     # 1. INSTALL APACHE FIRST
     echo "==== INSTALLING APACHE ====" >> $LOG_FILE
     export DEBIAN_FRONTEND=noninteractive
