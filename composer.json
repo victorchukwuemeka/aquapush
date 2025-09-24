@@ -9,7 +9,8 @@
         "laravel/framework": "^11.9",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
-        "phpseclib/phpseclib": "~3.0"
+        "phpseclib/phpseclib": "~3.0",
+        "unicodeveloper/laravel-paystack": "^1.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
