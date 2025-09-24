@@ -310,6 +310,7 @@ runcmd:
     mysql -e "DROP DATABASE IF EXISTS test;"
     mysql -e "FLUSH PRIVILEGES;"
     
+    
     #create the database 
     #mysql -e "CREATE DATABASE aquapush;"
     #mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"

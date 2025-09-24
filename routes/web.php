@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PageController;
@@ -56,13 +57,18 @@ Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanController::class, 
 
 
  
- // Handle the form submission
+// Handle the form submission
 Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 ->name('digitalocean.store');
+
+
+
 Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanController::class, 'getDroplet'])
  ->name('droplet.show');
 Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'addRepoToDroplet'])
+->middleware('checkingBilling')
 ->name('droplet.setup');
+
 Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteDroplet'])
   ->name('droplets.delete');
 
@@ -79,6 +85,15 @@ Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 ->name('api.tokens.index');
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])
 ->name('account.settings.index');
+
+
+
+/**
+ * billing related stuffs
+ */
+ Route::get('/show/billing', [BillingController::class, 'show'])->name('billing.show');
+
+
 
 
 

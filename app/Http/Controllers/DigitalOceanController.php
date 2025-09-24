@@ -54,6 +54,7 @@ class DigitalOceanController extends Controller
          //$phpVersions = ['7.4', '8.0', '8.1', '8.2'];
          //$webServers = ['nginx', 'apache'];
 
+
          $droplet_ip = $droplet->ip_address;
 
          return view('dashboard.droplets.configure', [
@@ -71,6 +72,15 @@ class DigitalOceanController extends Controller
      // Add GitHub repository to droplet
      public function addRepoToDroplet(Request $request)
      {   
+        
+        // 1. Check billing first
+        if (!auth()->user()->is_subscribed) {
+            return redirect()
+              ->route('billing.show')
+              ->with('error', 'Please subscribe before deploying your repository.');
+        }
+
+         
          //dd($request->droplet_ip);
          $request->validate([
              'droplet_ip' => 'required|ip',
@@ -101,7 +111,8 @@ class DigitalOceanController extends Controller
   
          return response()->json($response->json());
      }
-    
+
+     
    
       // Delete Droplet
       public function deleteDroplet($droplet_id)
