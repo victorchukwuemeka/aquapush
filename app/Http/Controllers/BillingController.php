@@ -11,13 +11,14 @@ use App\Models\Payment;
 class BillingController extends Controller
 {
    
+
     /**
      * Show the billing page
      */
     public function show()
     {  
-        $payment = Payment::where('user_id', Auth::id())->latest()->get();
-        return view('billing.show', compact($payment));
+        $payments = Payment::where('user_id', Auth::id())->latest()->get();
+        return view('billing.show', compact('payments'));
     }
 
     /**
@@ -25,7 +26,16 @@ class BillingController extends Controller
      */
     public function redirectToGateway(Request $request)
     {
+        //dd($request);
+        //return Paystack::getAuthorizationUrl()->redirectNow();
         try {
+            // Merge required fields into the request
+            $request->merge([
+                'email'    => Auth::user()->email,
+                'amount'   => 2 * 100, // Example: $100, in cents (Paystack requires smallest unit)
+                'currency' => config('paystack.currency', 'USD'),
+                'reference' => Paystack::genTranxRef(),
+            ]);
             return Paystack::getAuthorizationUrl()->redirectNow();
         } catch (\Exception $e) {
             return back()->with('error', 'The paystack token has expired. Please refresh the page and try again.');
@@ -41,11 +51,13 @@ class BillingController extends Controller
 
         $reference = $paymentDetails['data']['reference'];
         $status    = $paymentDetails['data']['status'];
+        $amount    = $paymentDetails['data']['amount'] / 100; 
 
         Payment::create([
             'user_id'      => Auth::id(),
             'reference'    => $reference,
             'status'       => $status,
+            'amount'       => $amount,
             'raw_response' => json_encode($paymentDetails),
         ]);
 

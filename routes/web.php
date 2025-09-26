@@ -91,11 +91,11 @@ Route::get('account/setting', [DashboardController::class, 'accountSetting'])
 /**
  * billing related stuffs
  */
-Route::middleware(['auth'])->group(function () {
+//Route::middleware(['auth'])->group(function () {
     Route::get('/billing', [BillingController::class, 'show'])->name('billing.show');
     Route::post('/billing/pay', [BillingController::class, 'redirectToGateway'])->name('billing.pay');
     Route::get('/billing/callback', [BillingController::class, 'handleGatewayCallback'])->name('billing.callback');
-});
+//});
 
 
 
