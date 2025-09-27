@@ -23,15 +23,15 @@
             <input type="url" class="form-control" id="repo_url" name="repo_url" required>
         </div>
         
-        @if(auth()->user()->is_subscribed)
-          <button type="submit" class="btn btn-primary">Add Repository</button>
+       {{-- @if(auth()->user()->is_subscribed)
+          <!--<button type="submit" class="btn btn-primary">Add Repository</button>-->
         @else
-            <a href="{{ route('billing.show') }}" class="btn btn-warning">
+           <!-- <a href="{{ route('billing.show') }}" class="btn btn-warning">
                 Subscribe to Deploy
-            </a>
-        @endif
+            </a>-->
+        @endif --}}
 
-        <!--<button type="submit" class="btn btn-primary">Add Repository</button>-->
+        <button type="submit" class="btn btn-primary">Add Repository</button>
     </form>
 </div>
 @endsection

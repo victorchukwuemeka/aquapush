@@ -66,7 +66,7 @@ Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
 Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanController::class, 'getDroplet'])
  ->name('droplet.show');
 Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'addRepoToDroplet'])
-->middleware('checkingBilling')
+//->middleware('checkingBilling')
 ->name('droplet.setup');
 
 Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteDroplet'])

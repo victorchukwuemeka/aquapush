@@ -74,11 +74,11 @@ class DigitalOceanController extends Controller
      {   
         
         // 1. Check billing first
-        if (!auth()->user()->is_subscribed) {
+        /*if (!auth()->user()->is_subscribed) {
             return redirect()
               ->route('billing.show')
               ->with('error', 'Please subscribe before deploying your repository.');
-        }
+        }*/
 
          
          //dd($request->droplet_ip);

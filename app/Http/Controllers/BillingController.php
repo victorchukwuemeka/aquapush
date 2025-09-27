@@ -61,12 +61,7 @@ class BillingController extends Controller
             'raw_response' => json_encode($paymentDetails),
         ]);
 
-        // Example: Save to DB
-        /**$user = Auth::user();
-        $user->last_payment_reference = $paymentDetails['data']['reference'] ?? null;
-        $user->last_payment_status = $paymentDetails['data']['status'] ?? null;
-        $user->save();*/
-
+        
         return redirect()->route('billing.show')
             ->with('success', 'Payment successful!');
     }

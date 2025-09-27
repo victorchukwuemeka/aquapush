@@ -39,4 +39,7 @@ return [
      * i want to make dollar my default you get ba 
      */
     'currency'      => env('PAYSTACK_CURRENCY', 'USD'),
+
+    'callback_url' => env('PAYSTACK_CALLBACK_URL', 'http://localhost:8000/billing/callback'),
+
 ];
