@@ -99,4 +99,71 @@ class LoginController extends Controller
             return redirect()->route("login-error")->with('error', 'Unable  futo login with GitHub.');
        // }
     }
+
+    // --- Google ---
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback(Request $request)
+{
+    try {
+        // Get Google user
+        $googleUser = Socialite::driver('google')->stateless()->user();
+
+        // Ensure fields are present
+        $email = $googleUser->getEmail();
+        $name = $googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User';
+        $avatar = $googleUser->getAvatar() ?? 'default-avatar.png';
+        $token = encrypt($googleUser->token);
+        $refreshToken = $googleUser->refreshToken ? encrypt($googleUser->refreshToken) : null;
+
+        // --- Check if user already exists by Google ID ---
+        $user = User::where('google_id', $googleUser->id)->first();
+
+        if ($user) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            return redirect()->route('dashboard');
+        }
+
+        // --- Check if user exists by email ---
+        $user_with_email = User::where('email', $googleUser->email)->first();
+
+        if ($user_with_email) {
+            // Link Google account to existing user
+            $user_with_email->update([
+                'google_id' => $googleUser->id,
+                'google_token' => $token,
+                'google_refresh_token' => $refreshToken,
+                'avatar' => $avatar,
+            ]);
+
+            Auth::login($user_with_email);
+        } else {
+            // Create new user
+            if ($googleUser->email) {
+                $user = User::create([
+                    'google_id' => $googleUser->id,
+                    'name' => $name,
+                    'email' => $email,
+                    'google_token' => $token,
+                    'google_refresh_token' => $refreshToken,
+                    'avatar' => $avatar,
+                ]);
+                Auth::login($user);
+            } else {
+                return dd($googleUser); // fallback if email missing
+            }
+        }
+
+        return redirect()->route('dashboard');
+
+    } catch (\Throwable $e) {
+        Log::error('Google login failed: ' . $e->getMessage());
+        return redirect()->route("login-error")->with('error', 'Unable to login with Google.');
+    }
+}
+
 }
