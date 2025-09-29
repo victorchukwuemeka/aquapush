@@ -21,7 +21,7 @@ write_files:
        $headers = getallheaders();
         
        //configure the env from  env.example
-       function setupProject($projectDir){
+       function setupProject($projectDir,$dbName,$dbUser,$dbPass){
         
          $envFile = "$projectDir/.env";
          $envExample = "$projectDir/.env.example";
@@ -41,9 +41,9 @@ write_files:
                 '/DB_PASSWORD=.*/'
               ], [
                 'DB_HOST=127.0.0.1',
-                'DB_DATABASE=aquapush',
-                'DB_USERNAME=aquapush_user',
-                'DB_PASSWORD=another_strong_password'
+                'DB_DATABASE={$dbName}',
+                'DB_USERNAME={$dbUser}',
+                'DB_PASSWORD={$dbPass}'
              ], $envContent);
              
              if(file_put_contents($envFile, $envContent) === false){
@@ -78,9 +78,33 @@ write_files:
           }
 
           $repo = escapeshellarg($data['repo']);
+          $dbName = escapeshellarg($data['db_name'] ?? 'aquapush');
+          $dbUser = escapeshellarg($data['db_user'] ?? 'aquapush_user');
+          $dbPass = escapeshellarg($data['db_pass'] ?? 'another_strong_password');
+
           $projectDir = '/var/www/html/repo';
 
           try {
+
+              //0. Creating db dynamically 
+              $rootPass = 'your_strong_password';//remember from the cloud init
+              $createDbCmd = "mysql -u root -p{$rootPass} -e \"CREATE DATABASE IF NOT EXISTS {$data['db_name']};\"";
+              exec($createDbCmd, $output, $returnCode);
+              if ($returnCode !== 0) {
+                throw new \RuntimeException("DB creation failed: " . implode("\n", $output));
+              }
+
+              $grantCmd = "mysql -u root -p{$rootPass} -e \"GRANT ALL ON {$data['db_name']}.* TO '{$data['db_user']}'@'localhost' IDENTIFIED BY '{$data['db_pass']}'; FLUSH PRIVILEGES;\"";
+              exec($grantCmd, $output, $returnCode);
+              if ($returnCode !== 0) {
+                throw new \RuntimeException("Grant failed: " . implode("\n", $output));
+              }
+            
+              // --- Setup .env dynamically ---
+              setupProject($projectDir, $data['db_name'], $data['db_user'], $data['db_pass']);
+
+
+
               // 1. Create directory with sudo fallback
               if (!@mkdir($projectDir, 0775, true) && !is_dir($projectDir)) {
                   exec('sudo mkdir -p ' . escapeshellarg($projectDir) . ' 2>&1', $output, $returnCode);
@@ -314,9 +338,9 @@ runcmd:
     #create the database 
     #mysql -e "CREATE DATABASE aquapush;"
     #mysql -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
-    mysql -u root -pyour_strong_password -e "CREATE DATABASE aquapush;"
-    mysql -u root -pyour_strong_password -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
-    mysql -u root -pyour_strong_password -e "FLUSH PRIVILEGES;"
+    #mysql -u root -pyour_strong_password -e "CREATE DATABASE aquapush;"
+    #mysql -u root -pyour_strong_password -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
+    #mysql -u root -pyour_strong_password -e "FLUSH PRIVILEGES;"
     # Laravel VirtualHost configuration
     cat <<EOF >/etc/apache2/sites-available/laravel.conf
     <VirtualHost *:80>
