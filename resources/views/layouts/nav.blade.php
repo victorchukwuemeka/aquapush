@@ -7,9 +7,10 @@
         </div>
 
         <nav class="hidden sm:flex space-x-6">
-            <a href="{{ url('features') }}" class="text-gray-700 hover:text-red-600 transition duration-300">Features</a>
-            <a href="{{ url('about') }}" class="text-gray-700 hover:text-red-600 transition duration-300">About</a>
-            <a href="{{ url('contact') }}" class="text-gray-700 hover:text-red-600 transition duration-300">Contact</a>
+            <!--<a href="{{ url('features') }}" class="text-gray-700 hover:text-red-600 transition duration-300">Features</a>-->
+
+            <a href="{{ route('about') }}" class="text-gray-700 hover:text-red-600 transition duration-300">About</a>
+            <a href="{{ route('contact') }}" class="text-gray-700 hover:text-red-600 transition duration-300">Contact</a>
         </nav>
 
         <div class="flex items-center">

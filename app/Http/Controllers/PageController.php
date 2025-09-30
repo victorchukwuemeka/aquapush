@@ -16,4 +16,12 @@ class PageController extends Controller
         return view('dashboard.index');
     }
 
+    public function about(){
+        return view('pages.about-page');
+    }
+
+    public function contact(){
+        return view('pages.contact-page'); 
+    }
+
 }

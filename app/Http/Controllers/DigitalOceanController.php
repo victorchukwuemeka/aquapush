@@ -108,7 +108,7 @@ class DigitalOceanController extends Controller
             'headers' => $response->headers(),
           ]);*/
 
-          dd($response->status(), $response->body());
+          //dd($response->status(), $response->body());
 
 
 

@@ -14,7 +14,8 @@ use App\Http\Middleware\GitHubAuthenticated;
 
 //home page 
 Route::get('/', [PageController::class, 'landingPage'])->name('home');
-
+Route::get('about/page', [PageController::class, 'about'])->name('about');
+Route::get('contact/page', [PageController::class, 'contact'])->name('contact');
 
 
 //authentication route 

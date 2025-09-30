@@ -1,44 +1,69 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex h-screen">
+<div class="flex min-h-screen bg-gray-50">
     <!-- Sidebar -->
     @include('partials.sidebar')
 
     <!-- Main Content -->
-    <div class="flex-1 bg-gray-100">
-        <div class="container mx-auto py-10 px-6">
+    <main class="flex-1 p-4 sm:p-6 lg:p-8">
+        <div class="container mx-auto max-w-7xl">
             <!-- Welcome Section -->
-            <div class="text-center">
-                <h1 class="text-4xl font-bold text-red-600 mb-4">Welcome to Your AquaPush Dashboard</h1>
-                <p class="text-gray-700">Manage your deployments, track your droplets, and get the most out of AquaPush.</p>
+            <div class="text-center mb-12 animate-fade-in">
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-red-600 mb-3 tracking-tight">
+                    Welcome to Your AquaPush Dashboard
+                </h1>
+                <p class="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+                    Seamlessly manage your deployments, track droplets, and optimize your AquaPush experience.
+                </p>
             </div>
 
             <!-- Dashboard Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-                <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-lg text-center">
-                    <h2 class="text-2xl font-semibold text-red-600">Deployments</h2>
-                    <p class="text-gray-600 mt-2">Track and manage your site deployments efficiently.</p>
-                    <a href="{{ route('deployments.index') }}" class="inline-block mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
-                        View Deployments  kkk
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-red-600 mb-3">Deployments</h2>
+                    <p class="text-gray-600 text-sm sm:text-base mb-4">
+                        Monitor and manage your site deployments with ease and efficiency.
+                    </p>
+                    <a href="{{ route('deployments.index') }}"
+                       class="inline-block bg-red-600 text-white py-2 px-5 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm sm:text-base">
+                        View Deployments
                     </a>
                 </div>
-                <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-lg text-center">
-                    <h2 class="text-2xl font-semibold text-red-600">API Tokens</h2>
-                    <p class="text-gray-600 mt-2">Manage your DigitalOcean API tokens for easy integration.</p>
-                    <a href="{{ route('api.tokens.index') }}" class="inline-block mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
+                <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-red-600 mb-3">API Tokens</h2>
+                    <p class="text-gray-600 text-sm sm:text-base mb-4">
+                        Securely manage your DigitalOcean API tokens for seamless integration.
+                    </p>
+                    <a href="{{ route('api.tokens.index') }}"
+                       class="inline-block bg-red-600 text-white py-2 px-5 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm sm:text-base">
                         Manage Tokens
                     </a>
                 </div>
-                <div class="p-6 bg-white border border-gray-200 rounded-lg shadow-lg text-center">
-                    <h2 class="text-2xl font-semibold text-red-600">Account Settings</h2>
-                    <p class="text-gray-600 mt-2">Update your profile and manage account preferences.</p>
-                    <a href="{{ route('account.settings.index') }}" class="inline-block mt-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
+                <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-red-600 mb-3">Account Settings</h2>
+                    <p class="text-gray-600 text-sm sm:text-base mb-4">
+                        Personalize your profile and configure account preferences.
+                    </p>
+                    <a href="{{ route('account.settings.index') }}"
+                       class="inline-block bg-red-600 text-white py-2 px-5 rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm sm:text-base">
                         Edit Profile
                     </a>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
+
+<!-- Custom CSS for Animation -->
+<style>
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+</style>
 @endsection
