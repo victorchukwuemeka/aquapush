@@ -40,10 +40,10 @@ write_files:
                 '/DB_USERNAME=.*/',
                 '/DB_PASSWORD=.*/'
               ], [
-                'DB_HOST=127.0.0.1',
-                'DB_DATABASE={$dbName}',
-                'DB_USERNAME={$dbUser}',
-                'DB_PASSWORD={$dbPass}'
+                "DB_HOST=127.0.0.1",
+                "DB_DATABASE={$dbName}",
+                "DB_USERNAME={$dbUser}",
+                "DB_PASSWORD={$dbPass}"
              ], $envContent);
              
              if(file_put_contents($envFile, $envContent) === false){
@@ -70,6 +70,15 @@ write_files:
 
        //query the api with your git url
       if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+          	
+          // Log everything to debug
+          logMessage("=== DEBUG START ===");
+          logMessage("Content-Type: " . ($_SERVER['CONTENT_TYPE'] ?? 'not set'));
+          logMessage("Raw POST data: " . print_r($_POST, true));
+          logMessage("Raw input stream: " . file_get_contents('php://input'));
+          logMessage("JSON decoded: " . print_r(json_decode(file_get_contents('php://input'), true), true));
+          logMessage("=== DEBUG END ===");
+
           $data = json_decode(file_get_contents('php://input'), true);
           if (json_last_error() !== JSON_ERROR_NONE || empty($data['repo'])) {
               http_response_code(400);
@@ -78,9 +87,14 @@ write_files:
           }
 
           $repo = escapeshellarg($data['repo']);
-          $dbName = escapeshellarg($data['db_name'] ?? 'aquapush');
-          $dbUser = escapeshellarg($data['db_user'] ?? 'aquapush_user');
-          $dbPass = escapeshellarg($data['db_pass'] ?? 'another_strong_password');
+
+          $dbName = $data['db_name'] ?? 'aquapush';
+          $dbUser = $data['db_user'] ?? 'aquapush_user';
+          $dbPass = $data['db_pass'] ?? 'another_strong_password';    
+          
+          //$dbName = escapeshellarg($data['db_name'] ?? 'aquapush');
+          //$dbUser = escapeshellarg($data['db_user'] ?? 'aquapush_user');
+          //$dbPass = escapeshellarg($data['db_pass'] ?? 'another_strong_password');
 
           $projectDir = '/var/www/html/repo';
 
@@ -88,7 +102,9 @@ write_files:
 
               //0. Creating db dynamically 
               $rootPass = 'your_strong_password';//remember from the cloud init
-              $createDbCmd = "mysql -u root -p{$rootPass} -e \"CREATE DATABASE IF NOT EXISTS {$data['db_name']};\"";
+              //$createDbCmd = "mysql -u root -p'{$rootPass}' -e \"CREATE DATABASE IF NOT EXISTS {$data['db_name']};\"";
+              $createDbCmd = "mysql -u root -p'{$rootPass}' -e \"CREATE DATABASE IF NOT EXISTS {$dbName};\" 2>&1";
+
               exec($createDbCmd, $output, $returnCode);
               if ($returnCode !== 0) {
                 throw new \RuntimeException("DB creation failed: " . implode("\n", $output));
@@ -101,7 +117,7 @@ write_files:
               }
             
               // --- Setup .env dynamically ---
-              setupProject($projectDir, $data['db_name'], $data['db_user'], $data['db_pass']);
+              //setupProject($projectDir, $data['db_name'], $data['db_user'], $data['db_pass']);
 
 
 
@@ -121,7 +137,7 @@ write_files:
               }
 
               // 3. Setup .env configuration
-              setupProject($projectDir);
+              setupProject($projectDir,$dbName,$dbUser,$dbPass);
 
               // 4. Composer install
               chdir($projectDir);

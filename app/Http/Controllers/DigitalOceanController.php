@@ -85,13 +85,20 @@ class DigitalOceanController extends Controller
          $request->validate([
              'droplet_ip' => 'required|ip',
              'repo_url' => 'required|url',
+             'db_name' => 'required|string',
+             'db_user' => 'required|string', 
+             'db_pass' => 'required|string',
          ]);
+
          $api_key = 'YOUR_SECRET_KEY';
  
          $response = Http::withHeaders([
              'X-API-KEY' => $api_key, // Use X-API-KEY header
          ])->post("http://{$request->droplet_ip}/install.php", [
              'repo' => $request->repo_url,
+             'db_name' => $request->db_name,      
+             'db_user' => $request->db_user,      
+             'db_pass' => $request->db_pass,
          ]);
          
           //log the error 

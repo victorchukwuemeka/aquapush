@@ -22,6 +22,9 @@ Route::get('auth/github', [LoginController::class, 'redirectToGitHub'])->name('a
 Route::get('auth/github/callback', [LoginController::class, 'handleGitHubCallback']);
 Route::post('auth/github', [LoginController::class, 'gitLogout'])->name('logout');
 
+Route::get('auth/google', [LoginController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [LoginController::class, 'handleGoogleCallback']);
+
 
 //error handling 
 Route::get('login/error', function () {
