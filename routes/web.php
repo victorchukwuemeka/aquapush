@@ -9,13 +9,17 @@ use App\Http\Controllers\DigitalOceanController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
-
+use App\Http\Controllers\ContactController;
 
 
 //home page 
 Route::get('/', [PageController::class, 'landingPage'])->name('home');
 Route::get('about/page', [PageController::class, 'about'])->name('about');
 Route::get('contact/page', [PageController::class, 'contact'])->name('contact');
+
+
+//everything about contacting us 
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 
 //authentication route 
