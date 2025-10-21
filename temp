@@ -1,7 +1,0 @@
- - curl -sS https://getcomposer.org/installer | php
-  - mv composer.phar /usr/local/bin/composer
-  - chmod +x /usr/local/bin/composer
-
- // Install Composer dependencies
-          //\$output = shell_exec("sudo -u www-data composer install --no-interaction --no-progress 2>&1");
-          //logMessage("your composer output: \$output");

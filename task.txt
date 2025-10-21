@@ -1,22 +1,8 @@
-deploy the site 
-    *set up ci/cd pipeline for automatic deployment = to solve this readup on git-action,
-       running a command on your droplet from digitalOceanApi = pending ,
+* fix all the dashboard problems and details 
+*  add the deployment tracker 
+* add the admin board 
+* make the whole process secured 
+* talk about it on hacker news 
+* making   a video on product showcase 
 
-
-
-monitor deployment
-
-    *provide a realtime update = pending 
-    *offer a log and error message = pending 
-    *post a deployment mANAger 
-    *enable users to view site metric.  
-
-
-settup the virtual host
-   *settup up the apache2 so the droplet ip is enough
-   *user should be able to just add he's domain .
-   
-
-
-work flow of an aquapush user .
-
+* product hunt launch 

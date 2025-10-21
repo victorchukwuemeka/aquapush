@@ -7,6 +7,7 @@ use App\Models\Contact;
 
 class ContactController extends Controller
 {
+    
     //
     public function store(Request $request)
     {
