@@ -38,9 +38,9 @@
                 <h4 class="text-white font-semibold text-lg mb-4">Product</h4>
                 <ul class="space-y-3">
                     <li><a href="#features" class="hover:text-red-500 transition-colors duration-200">Features</a></li>
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Pricing</a></li>
+                    <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Pricing</a></li>-->
                     <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Documentation</a></li>
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Changelog</a></li>
+                    <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Changelog</a></li>-->
                 </ul>
             </div>
 
@@ -48,10 +48,10 @@
             <div>
                 <h4 class="text-white font-semibold text-lg mb-4">Company</h4>
                 <ul class="space-y-3">
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">About Us</a></li>
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Blog</a></li>
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Careers</a></li>
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Contact</a></li>
+                    <li><a href="{{ route('about') }}" class="hover:text-red-500 transition-colors duration-200">About Us</a></li>
+                    <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Blog</a></li>
+                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Careers</a></li>-->
+                    <li><a href="{route('contact')}" class="hover:text-red-500 transition-colors duration-200">Contact</a></li>
                 </ul>
             </div>
 
