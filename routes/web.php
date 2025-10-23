@@ -87,8 +87,8 @@ Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteD
 //dashborad related stuffs 
 Route::get('/dashboard', [DashboardController::class, 'index'])
 ->name('dashboard');
-Route::get('deployments/index', [DashboardController::class, 'deployment'])
-->name('deployments.index');
+Route::get('deployments/index', [DashboardController::class, 'deployment']);
+//->name('deployments.index');
 Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 ->name('api.tokens.index');
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])

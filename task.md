@@ -5,6 +5,10 @@
 * talk about it on hacker news 
 * making   a video on product showcase 
 * product hunt launch 
-*  make it possible to use the gitlogin both off ad online .
 * fix the whole breaken link
-* the site is too slow 
+* organize proper deployment continuation so exchange will never break anything 
+* add the documentation -> like create a proper doc  
+* add the links for the media
+* create the legal pages 
+
+

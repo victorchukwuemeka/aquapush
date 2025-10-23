@@ -51,7 +51,7 @@
                     <li><a href="{{ route('about') }}" class="hover:text-red-500 transition-colors duration-200">About Us</a></li>
                     <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Blog</a></li>
                     <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Careers</a></li>-->
-                    <li><a href="{route('contact')}" class="hover:text-red-500 transition-colors duration-200">Contact</a></li>
+                    <li><a href="{{ route('contact') }}" class="hover:text-red-500 transition-colors duration-200">Contact</a></li>
                 </ul>
             </div>
 
