@@ -10,10 +10,14 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
 use App\Http\Controllers\ContactController;
-
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Controllers\AdminController;
 
 //home page 
 Route::get('/', [PageController::class, 'landingPage'])->name('home');
+
+
+
 Route::get('about/page', [PageController::class, 'about'])->name('about');
 Route::get('contact/page', [PageController::class, 'contact'])->name('contact');
 
@@ -130,8 +134,6 @@ Route::get('/check-env', function () {
 
 
 use Dotenv\Dotenv;
-
-
 Route::get('/debug-env', function () {
     $dotenv = Dotenv::createImmutable(base_path());
     $dotenv->load();
@@ -143,3 +145,9 @@ Route::get('/debug-env', function () {
     ];
 });
 
+
+//admin routes 
+Route::get('/admin/dashboard', [AdminController::class, 'index'])
+->middleware('admin');
+Route::get('/admin/users', [AdminController::class, 'users'])
+->middleware('admin');
