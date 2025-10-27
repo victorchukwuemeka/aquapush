@@ -10,8 +10,6 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
 use App\Http\Controllers\ContactController;
-use App\Http\Middleware\AdminMiddleware;
-use App\Http\Controllers\AdminController;
 
 //home page 
 Route::get('/', [PageController::class, 'landingPage'])->name('home');
@@ -45,8 +43,11 @@ Route::get('not/loggedin', function(){
 
 
 
+
+
 //everything relating to deployment for the user to handle all needed to 
-Route::get('/deployments', [DeploymentController::class, 'index'])->name('deployments.index');
+// Route::get('/deployments', [DeploymentController::class, 'index']);
+//->name('deployments.index');
 Route::get('/deploy/new', [DeploymentController::class, 'create'])
 ->middleware(GitHubAuthenticated::class)
 ->name('deploy.new');
@@ -91,8 +92,8 @@ Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteD
 //dashborad related stuffs 
 Route::get('/dashboard', [DashboardController::class, 'index'])
 ->name('dashboard');
-Route::get('deployments/index', [DashboardController::class, 'deployment']);
-//->name('deployments.index');
+Route::get('deployments/index', [DashboardController::class, 'deployment'])
+->name('deployments.index');
 Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 ->name('api.tokens.index');
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])
@@ -146,8 +147,3 @@ Route::get('/debug-env', function () {
 });
 
 
-//admin routes 
-Route::get('/admin/dashboard', [AdminController::class, 'index'])
-->middleware('admin');
-Route::get('/admin/users', [AdminController::class, 'users'])
-->middleware('admin');

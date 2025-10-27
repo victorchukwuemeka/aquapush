@@ -11,7 +11,7 @@
             <!-- Welcome Section -->
             <div class="text-center mb-12 animate-fade-in">
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-red-600 mb-3 tracking-tight">
-                    Welcome to Your AquaPush Dashboard
+                    Welcome to Your AquaPush Dashboard  
                 </h1>
                 <p class="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
                     Seamlessly manage your deployments, track droplets, and optimize your AquaPush experience.

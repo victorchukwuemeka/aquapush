@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DigitalOceanDroplet;
-use Illuminate\Container\Attributes\Auth;
+use Illuminate\Support\Facades\Auth;
 use GuzzleHttp\Client;
 
 class DashboardController extends Controller
@@ -27,7 +27,7 @@ class DashboardController extends Controller
     public function deployment(){
         
         try {
-            $user_id = auth()->id();
+            $user_id = Auth::id();
             $droplets = DigitalOceanDroplet::where('user_id', $user_id)->get();
             return view('dashboard.deployment.index-deployment', ['droplets' => $droplets]);
         } catch (\Throwable $th) {
