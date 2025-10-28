@@ -11,7 +11,6 @@ class DashboardController extends Controller
 {
     public function index(){
         
-        
         return view('dashboard.index');
     }
 
@@ -24,17 +23,17 @@ class DashboardController extends Controller
     }
    
     //listing all droplet 
-    public function deployment(){
+    /*public function droplets(){
         
         try {
             $user_id = Auth::id();
             $droplets = DigitalOceanDroplet::where('user_id', $user_id)->get();
-            return view('dashboard.deployment.index-deployment', ['droplets' => $droplets]);
-        } catch (\Throwable $th) {
+            return view('dashboard.droplets.index-droplet', ['droplets' => $droplets]);
+         } catch (\Throwable $th) {
             return redirect()->back()
             ->with('error', 'Failed to fetch droplets: ' . $th->getMessage());
         }
-    }
+    }*/
 
 
     

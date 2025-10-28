@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\DeploymentController;
-use App\Http\Controllers\DigitalOceanController;
+use App\Http\Controllers\Dashboard\DigitalOceanDropletController;
+//DigitalOceanController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
@@ -65,25 +66,23 @@ Route::get('/repo-error', function(){
 
 // everything relating to digitalOcean 
 // Show the DigitalOcean configuration form
-Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanController::class, 'configureDeployment'])
+Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanDropletController::class, 'configureDeployment'])
  ->name('deployments.configure');
 
 
  
-// Handle the form submission
-Route::post('/digitalocean/config', [DigitalOceanController::class, 'store'])
+// check anything relating to the digitalOceandroplet.
+Route::post('/digitalocean/config', [DigitalOceanDropletController::class, 'store'])
 ->name('digitalocean.store');
-
-
-
-Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanController::class, 'getDroplet'])
+Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanDropletController::class, 'getDroplet'])
  ->name('droplet.show');
-Route::post('/droplets/setup/{droplet_id}', [DigitalOceanController::class, 'addRepoToDroplet'])
+Route::post('/droplets/setup/{droplet_id}', [DigitalOceanDropletController::class, 'addRepoToDroplet'])
 //->middleware('checkingBilling')
 ->name('droplet.setup');
-
-Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteDroplet'])
+Route::delete('/droplets/{droplet_id}', [DigitalOceanDropletController::class, 'deleteDroplet'])
   ->name('droplets.delete');
+Route::get('droplets/index', [DigitalOceanDropletController::class, 'index'])
+->name('droplets.index');
 
 
 
@@ -92,8 +91,6 @@ Route::delete('/droplets/{droplet_id}', [DigitalOceanController::class, 'deleteD
 //dashborad related stuffs 
 Route::get('/dashboard', [DashboardController::class, 'index'])
 ->name('dashboard');
-Route::get('deployments/index', [DashboardController::class, 'deployment'])
-->name('deployments.index');
 Route::get('api/tokenllll', [DashboardController::class, 'apiToken'])
 ->name('api.tokens.index');
 Route::get('account/setting', [DashboardController::class, 'accountSetting'])

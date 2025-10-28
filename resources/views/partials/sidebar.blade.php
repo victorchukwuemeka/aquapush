@@ -6,12 +6,10 @@
         <a href="{{ route('dashboard') }}" class="block py-2 px-4 rounded hover:bg-red-500">
             Dashboard
         </a>
-        <a href="{{ route('deployments.index') }}" class="block py-2 px-4 rounded hover:bg-red-500">
-            Deployments
+        <a href="{{ route('droplets.index') }}" class="block py-2 px-4 rounded hover:bg-red-500">
+            Droplets
         </a>
-        <a href="{{ route('api.tokens.index') }}" class="block py-2 px-4 rounded hover:bg-red-500">
-            API Tokens
-        </a>
+        
         <a href="{{ route('account.settings.index') }}" class="block py-2 px-4 rounded hover:bg-red-500">
             Account Settings
         </a>
