@@ -63,7 +63,7 @@
                     <p class="text-gray-600 text-sm sm:text-base mb-4">
                         Provision a new DigitalOcean droplet configured for Laravel deployment.
                     </p>
-                    <a href="{{ route('deploy.new') }}"
+                    <a href="{{ route('digitalocean-droplet.form') }}"
                        class="inline-block bg-green-600 text-white py-2 px-5 rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm sm:text-base">
                         Create Droplets
                     </a>

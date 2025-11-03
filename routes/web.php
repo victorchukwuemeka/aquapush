@@ -7,6 +7,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\DeploymentController;
 use App\Http\Controllers\Dashboard\DigitalOceanDropletController;
 //DigitalOceanController;
+use App\Http\Controllers\Dashboard\DigitalOceanLaravelProjectController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\GitHubAuthenticated;
@@ -45,46 +46,50 @@ Route::get('not/loggedin', function(){
 
 
 
-
 //everything relating to deployment for the user to handle all needed to 
 // Route::get('/deployments', [DeploymentController::class, 'index']);
 //->name('deployments.index');
 Route::get('/deploy/new', [DeploymentController::class, 'create'])
 ->middleware(GitHubAuthenticated::class)
 ->name('deploy.new');
+
 Route::get('/ssh/get', [DeploymentController::class, 'ssh'])->name('get-ssh');
 
 
 //Route::post('/deploy', [DeploymentController::class, 'fetchRepositoryDetails'])
 //->name('deploy');
-Route::post('/deploy/droplet', [DeploymentController::class, 'deploy'])->name('deploy.store');
+//Route::post('/deploy/droplet', [DeploymentController::class, 'deploy'])->name('deploy.store');
 Route::get('/repo-error', function(){
     return view('dashboard.errors.repo-name');
 })->name('error-not-laravel');
 
 
 
-// everything relating to digitalOcean 
-// Show the DigitalOcean configuration form
-Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanDropletController::class, 'configureDeployment'])
- ->name('deployments.configure');
-
-
- 
-// check anything relating to the digitalOceandroplet.
+/**
+ * this route has to deal with everything about digitalOcean droplet 
+ * from creating to deleting 
+ */
 Route::post('/digitalocean/config', [DigitalOceanDropletController::class, 'store'])
 ->name('digitalocean.store');
-Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanDropletController::class, 'getDroplet'])
+Route::get('/digitalocean/show/droplet/{droplet_id}', [DigitalOceanDropletController::class, 'get_droplet'])
  ->name('droplet.show');
-Route::post('/droplets/setup/{droplet_id}', [DigitalOceanDropletController::class, 'addRepoToDroplet'])
-//->middleware('checkingBilling')
-->name('droplet.setup');
+
 Route::delete('/droplets/{droplet_id}', [DigitalOceanDropletController::class, 'deleteDroplet'])
   ->name('droplets.delete');
 Route::get('droplets/index', [DigitalOceanDropletController::class, 'index'])
 ->name('droplets.index');
+Route::get('/digitalOcean/new/droplet/form', [DigitalOceanDropletController::class, 'form_for_droplet_creation'])
+->middleware(GitHubAuthenticated::class)
+->name('digitalocean-droplet.form');
+Route::post('/create/droplet', [DigitalOceanDropletController::class, 'droplet_creation_composer'])->name('create.droplet');
 
 
+//this route deals with the laravel apps that is deployed on the droplet .
+Route::get('/digitalocean/config/{droplet_id}', [DigitalOceanLaravelProjectController::class, 'configure_laravel_project_form'])
+ ->name('laravel_project.configure');
+Route::post('/droplets/setup/{droplet_id}', [DigitalOceanLaravelProjectController::class, 'add_repo_to_droplet'])
+//->middleware('checkingBilling')
+->name('laravel-app.setup');
 
 
 
@@ -129,6 +134,7 @@ Route::get('/check-env', function () {
         'redirect_url' => env('GITHUB_REDIRECT_URL'),
     ];
 });
+
 
 
 use Dotenv\Dotenv;

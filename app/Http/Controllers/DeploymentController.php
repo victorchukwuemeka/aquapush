@@ -59,10 +59,10 @@ class DeploymentController extends Controller
         return view('deploy.ssh-key-get');
     }
 
-    public function index(){
+    /**public function index(){
         
         return view('deploy.create');
-    }
+    }*/
     
     public function create()
     {
@@ -223,11 +223,11 @@ class DeploymentController extends Controller
         // Check if the provided SSH key already exists
         foreach ($existingKeys as $key) {
             if ($key['public_key'] === $publicKey) {
-                return $key['fingerprint']; // Return fingerprint if key exists
+                return $key['fingerprint']; 
             }
         }
 
-        // Add the SSH key if it doesn't exist
+        
         $response = $this->client->post('https://api.digitalocean.com/v2/account/keys', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiToken,
@@ -240,7 +240,7 @@ class DeploymentController extends Controller
         ]);
 
         $newKey = json_decode($response->getBody(), true);
-        return $newKey['fingerprint']; // Return the new fingerprint
+        return $newKey['fingerprint']; 
     }
 
     public function createDroplet($apiToken, $dropletName, $region, $size, $image, $publicKey = null)
@@ -394,7 +394,7 @@ class DeploymentController extends Controller
     
 
     //making sure the repo a laravel project .
-    public function check_if_repo_is_laravel($repo): bool
+    public function check_if_repo_is_laravell($repo): bool
     {    
         //split the repo string .
         [$username , $repo_name] = explode('/', $repo);

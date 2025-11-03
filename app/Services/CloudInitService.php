@@ -215,22 +215,26 @@ write_files:
 runcmd:
   - |
     # Set up logging
+    echo "STATUS: Booting..." > /var/www/html/droplet_status.txt
     mkdir -p /var/log
     LOG_FILE="/var/log/cloud-init-output.log"
     echo "==== STARTING INSTALLATION ====" > $LOG_FILE
     
     # Enable PHP repo first
+    echo "STATUS: Preparing package sources..." > /var/www/html/droplet_status.txt
     apt-get install -y software-properties-common >> $LOG_FILE 2>&1
     add-apt-repository ppa:ondrej/php -y >> $LOG_FILE 2>&1
     apt-get update -y >> $LOG_FILE 2>&1
     
     # 1. INSTALL APACHE FIRST
     echo "==== INSTALLING APACHE ====" >> $LOG_FILE
+    echo "STATUS: Installing Apache web server..." > /var/www/html/droplet_status.txt
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y >> $LOG_FILE 2>&1
     apt-get install -y apache2 libapache2-mod-php8.3 >> $LOG_FILE 2>&1
 
     # Force Apache to use PHP 8.3 instead of the system default
+    echo "STATUS: Configuring Apache environment..." > /var/www/html/droplet_status.txt
     a2dismod php8.1 >> $LOG_FILE 2>&1 || true
     a2enmod php8.3 >> $LOG_FILE 2>&1
     systemctl restart apache2 >> $LOG_FILE 2>&1
@@ -238,6 +242,7 @@ runcmd:
     # Verify Apache
     if ! systemctl is-active apache2 >> $LOG_FILE 2>&1; then
         echo "Apache failed to start!" >> $LOG_FILE
+        echo "STATUS: Apache failed to start!" > /var/www/html/droplet_status.txt
         journalctl -u apache2 --no-pager >> $LOG_FILE
         exit 1
     fi
@@ -245,6 +250,7 @@ runcmd:
     # 2. INSTALL PHP 8.3
     echo "==== INSTALLING PHP ====" >> $LOG_FILE
     add-apt-repository ppa:ondrej/php -y >> $LOG_FILE 2>&1
+    echo "STATUS: Installing PHP 8.3 and extensions..." > /var/www/html/droplet_status.txt
     apt-get install -y \
         php8.3 php8.3-cli php8.3-common php8.3-mbstring \
         php8.3-xml php8.3-curl php8.3-mysql php8.3-zip \
@@ -252,6 +258,7 @@ runcmd:
 
     # 3. BULLETPROOF COMPOSER INSTALL
     echo "==== INSTALLING COMPOSER ====" >> $LOG_FILE
+    echo "STATUS: Installing Composer..." > /var/www/html/droplet_status.txt
     
     # Clean previous attempts
     rm -f /usr/local/bin/composer /usr/bin/composer /tmp/composer-setup.php
@@ -298,6 +305,7 @@ runcmd:
     )
     
     # Configure www-data environment
+    echo "STATUS: Configuring permissions..." > /var/www/html/droplet_status.txt
     mkdir -p /var/www/.composer
     chown -R www-data:www-data /var/www/.composer
     echo 'export HOME=/var/www' >> /etc/profile
@@ -317,6 +325,7 @@ runcmd:
 
     # 4. SET UP WWW-DATA USER
     echo "==== CONFIGURING PERMISSIONS ====" >> $LOG_FILE
+    echo "STATUS: Setting up system users..." > /var/www/html/droplet_status.txt
     if ! id www-data >/dev/null 2>&1; then
         groupadd -r www-data
         useradd -r -g www-data -d /var/www -s /usr/sbin/nologin www-data
@@ -328,14 +337,17 @@ runcmd:
     chmod -R 775 /var/www
 
     # 6. CONFIGURE SUDO
+    echo "STATUS: Configuring permissions and access..." > /var/www/html/droplet_status.txt
     echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2,  /bin/systemctl reload apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
     # 7.  APACHE CONFIG
+    echo "STATUS: Apache Configuration and access..." > /var/www/html/droplet_status.txt
     a2enmod rewrite >> $LOG_FILE 2>&1
     systemctl restart apache2 >> $LOG_FILE 2>&1
 
     #8. INSTALL MARIADB AND CONFIGURE IT
+    echo "STATUS: Mariandb Setup and configuration..." > /var/www/html/droplet_status.txt
     apt-get install -y mariadb-server mariadb-client || apt-get install -y mysql-server mysql-client
 
     # Start and verify
@@ -358,6 +370,8 @@ runcmd:
     #mysql -u root -pyour_strong_password -e "GRANT ALL ON aquapush.* TO 'aquapush_user'@'localhost' IDENTIFIED BY 'another_strong_password';"
     #mysql -u root -pyour_strong_password -e "FLUSH PRIVILEGES;"
     # Laravel VirtualHost configuration
+
+    echo "STATUS: Virtual Host Setup  and access..." > /var/www/html/droplet_status.txt
     cat <<EOF >/etc/apache2/sites-available/laravel.conf
     <VirtualHost *:80>
         ServerAdmin webmaster@localhost

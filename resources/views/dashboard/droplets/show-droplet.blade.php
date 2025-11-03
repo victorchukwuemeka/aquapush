@@ -78,11 +78,13 @@
                             </div>
                         </div>
                     </div>
+                    
                      <!-- New Deployment Section -->
                      <div class="mt-6 border-t pt-4">
                         <h3 class="text-xl font-semibold text-gray-700 mb-4">Project Deployment</h3>
                         <div class="flex space-x-4">
-                            <a href="{{ route('deployments.configure', ['droplet_id' => $dropletData['droplet']['id']]) }}" 
+
+                            <a href="{{ route('laravel_project.configure', ['droplet_id' => $dropletData['droplet']['id']]) }}" 
                                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition">
                                 Deploy New Project
                             </a>
