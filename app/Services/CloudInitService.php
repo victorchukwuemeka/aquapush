@@ -221,20 +221,20 @@ runcmd:
     echo "==== STARTING INSTALLATION ====" > $LOG_FILE
     
     # Enable PHP repo first
-    echo "STATUS: Preparing package sources..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Preparing package sources..." >> /var/www/html/droplet_status.txt
     apt-get install -y software-properties-common >> $LOG_FILE 2>&1
     add-apt-repository ppa:ondrej/php -y >> $LOG_FILE 2>&1
     apt-get update -y >> $LOG_FILE 2>&1
     
     # 1. INSTALL APACHE FIRST
+    echo "STATUS: Installing Apache web server..." >> /var/www/html/droplet_status.txt
     echo "==== INSTALLING APACHE ====" >> $LOG_FILE
-    echo "STATUS: Installing Apache web server..." > /var/www/html/droplet_status.txt
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y >> $LOG_FILE 2>&1
     apt-get install -y apache2 libapache2-mod-php8.3 >> $LOG_FILE 2>&1
 
     # Force Apache to use PHP 8.3 instead of the system default
-    echo "STATUS: Configuring Apache environment..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Configuring Apache environment..." >> /var/www/html/droplet_status.txt
     a2dismod php8.1 >> $LOG_FILE 2>&1 || true
     a2enmod php8.3 >> $LOG_FILE 2>&1
     systemctl restart apache2 >> $LOG_FILE 2>&1
@@ -248,17 +248,17 @@ runcmd:
     fi
 
     # 2. INSTALL PHP 8.3
+    echo "STATUS: Installing PHP 8.3 and extensions..." >> /var/www/html/droplet_status.txt
     echo "==== INSTALLING PHP ====" >> $LOG_FILE
     add-apt-repository ppa:ondrej/php -y >> $LOG_FILE 2>&1
-    echo "STATUS: Installing PHP 8.3 and extensions..." > /var/www/html/droplet_status.txt
     apt-get install -y \
         php8.3 php8.3-cli php8.3-common php8.3-mbstring \
         php8.3-xml php8.3-curl php8.3-mysql php8.3-zip \
         php8.3-bcmath php8.3-intl php8.3-opcache >> $LOG_FILE 2>&1
 
     # 3. BULLETPROOF COMPOSER INSTALL
+    echo "STATUS: Installing Composer..." >> /var/www/html/droplet_status.txt
     echo "==== INSTALLING COMPOSER ====" >> $LOG_FILE
-    echo "STATUS: Installing Composer..." > /var/www/html/droplet_status.txt
     
     # Clean previous attempts
     rm -f /usr/local/bin/composer /usr/bin/composer /tmp/composer-setup.php
@@ -305,13 +305,14 @@ runcmd:
     )
     
     # Configure www-data environment
-    echo "STATUS: Configuring permissions..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Configuring permissions..." >> /var/www/html/droplet_status.txt
     mkdir -p /var/www/.composer
     chown -R www-data:www-data /var/www/.composer
     echo 'export HOME=/var/www' >> /etc/profile
     echo 'export PATH=$PATH:/usr/local/bin' >> /etc/profile
     
     # Verify installation
+    echo "STATUS: Verify installations ..." >> /var/www/html/droplet_status.txt
     if ! sudo -u www-data bash -c 'source /etc/profile && composer --version' >> $LOG_FILE 2>&1; then
         echo "!!!! COMPOSER INSTALLATION FAILED !!!!" >> $LOG_FILE
         echo "Debug info:" >> $LOG_FILE
@@ -324,30 +325,31 @@ runcmd:
     fi
 
     # 4. SET UP WWW-DATA USER
+    echo "STATUS: Setting up system users..." >> /var/www/html/droplet_status.txt
     echo "==== CONFIGURING PERMISSIONS ====" >> $LOG_FILE
-    echo "STATUS: Setting up system users..." > /var/www/html/droplet_status.txt
     if ! id www-data >/dev/null 2>&1; then
         groupadd -r www-data
         useradd -r -g www-data -d /var/www -s /usr/sbin/nologin www-data
     fi
 
     # 5. CONFIGURE WEB DIRECTORY
+    echo "STATUS: Web directory setup..." >> /var/www/html/droplet_status.txt
     mkdir -p /var/www/html
     chown -R www-data:www-data /var/www
     chmod -R 775 /var/www
 
     # 6. CONFIGURE SUDO
-    echo "STATUS: Configuring permissions and access..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Configuring permissions and access..." >> /var/www/html/droplet_status.txt
     echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/local/bin/composer, /usr/bin/php, /bin/mkdir, /bin/chmod, /bin/chown, /usr/sbin/a2ensite, /usr/sbin/a2dissite, /bin/systemctl restart apache2,  /bin/systemctl reload apache2' > /etc/sudoers.d/www-data
     chmod 440 /etc/sudoers.d/www-data
 
     # 7.  APACHE CONFIG
-    echo "STATUS: Apache Configuration and access..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Apache Configuration and access..." >> /var/www/html/droplet_status.txt
     a2enmod rewrite >> $LOG_FILE 2>&1
     systemctl restart apache2 >> $LOG_FILE 2>&1
 
     #8. INSTALL MARIADB AND CONFIGURE IT
-    echo "STATUS: Mariandb Setup and configuration..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Mariandb Setup and configuration..." >> /var/www/html/droplet_status.txt
     apt-get install -y mariadb-server mariadb-client || apt-get install -y mysql-server mysql-client
 
     # Start and verify
@@ -371,7 +373,7 @@ runcmd:
     #mysql -u root -pyour_strong_password -e "FLUSH PRIVILEGES;"
     # Laravel VirtualHost configuration
 
-    echo "STATUS: Virtual Host Setup  and access..." > /var/www/html/droplet_status.txt
+    echo "STATUS: Virtual Host Setup  and access..." >> /var/www/html/droplet_status.txt
     cat <<EOF >/etc/apache2/sites-available/laravel.conf
     <VirtualHost *:80>
         ServerAdmin webmaster@localhost
@@ -392,6 +394,7 @@ runcmd:
     #sudo systemctl restart apache2
 
     # 8. VERIFICATION
+    echo "STATUS: Completed victor don't be mad .." >> /var/www/html/droplet_status.txt
     echo "==== VERIFICATION ====" >> $LOG_FILE
     {
         echo "Apache: $(systemctl is-active apache2)"
@@ -400,6 +403,7 @@ runcmd:
         echo "Web root: $(ls -ld /var/www/html)"
         echo "==== INSTALLATION COMPLETE ===="
     } >> $LOG_FILE
+
 EOT;
     }
 }

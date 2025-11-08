@@ -118,8 +118,13 @@ class  DigitalOceanDropletController extends Controller
 
            // Step 6: Return success or failure
           if ($returned_droplet_id) {
-            return  $this->store_droplet_data_on_our_db($validatedData,$returned_droplet_id);
+            // First, store the droplet's data in our database.
+            $this->store_droplet_data_on_our_db($validatedData, $returned_droplet_id);
+
+            // Now, redirect the user to the deployment status page.
+            return redirect()->route('droplets.deployment.status', ['droplet_id' => $returned_droplet_id]);
           } else {
+            // If droplet creation failed, show an error view.
             return view('dashboard.errors.deployment-error')->with('error', 'Failed to create droplet.');
           }
        // } catch (\Throwable $th) {
@@ -157,7 +162,7 @@ class  DigitalOceanDropletController extends Controller
                 
     
             ]);
-            return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
+            //return redirect()->route('dashboard')->with('success', 'Droplet created successfully.');
         }else{
          return 'empty ip';   
         }
@@ -455,7 +460,58 @@ class  DigitalOceanDropletController extends Controller
                 'status' => 500
             ]);
           }
-      }
+    }
+
+
+
+    public function getDropletStatus($droplet_id)
+    {
+        $droplet = DigitalOceanDroplet::where('droplet_id', $droplet_id)->first();
+
+        if (!$droplet) {
+            return response()->json(['status' => 'error', 'message' => 'Droplet not found.'], 404);
+        }
+
+        // If IP address is missing, try to fetch it from DigitalOcean
+        if (!$droplet->ip_address) {
+            // Re-use the existing method to get the IP from the API
+            $ip = $this->get_droplet_ip_address($droplet->droplet_id, $droplet->api_token);
+
+            if ($ip) {
+                $droplet->ip_address = $ip;
+                $droplet->save();
+            } else {
+                // If there's still no IP, the droplet is likely still booting.
+                // We send a 'pending' status to let the frontend know to try again.
+                return response()->json(['status' => 'pending', 'message' => 'Droplet is being created, but no IP address is available yet.']);
+            }
+        }
+
+        // Now that we are reasonably sure we have an IP, try to fetch the status file
+        try {
+            $response = Http::timeout(5)->get("http://{$droplet->ip_address}/droplet_status.txt");
+
+            if ($response->successful()) {
+                return response()->json(['status' => 'success', 'message' => $response->body()]);
+            }
+
+            // If the file is not found (404), the web server might not be ready.
+            if ($response->notFound()) {
+                return response()->json(['status' => 'pending', 'message' => 'Droplet is running, but the web server is not yet responding.']);
+            }
+
+            return response()->json(['status' => 'error', 'message' => 'Failed to fetch status file from droplet.'], 500);
+
+        } catch (\Exception $e) {
+            // A connection exception likely means the droplet is not yet reachable.
+            return response()->json(['status' => 'pending', 'message' => 'Waiting for droplet to become reachable...']);
+        }
+    }
+    
+    public function showDeploymentStatus($droplet_id){
+        return view('dashboard.droplets.deployment-status',['droplet_id' => $droplet_id]);
+    }
+
 
 }
 
