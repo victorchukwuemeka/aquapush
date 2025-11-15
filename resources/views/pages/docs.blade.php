@@ -84,78 +84,108 @@
 
 
 
-<!-- ====================== 3. Key Features ====================== -->
+
+<!-- ====================== 2. How Deployment Works ====================== -->
 <section class="mb-12">
-    <h2 class="text-2xl font-semibold text-gray-900 mb-3">3. Key Features</h2>
-    <ul class="list-disc ml-6 text-gray-700 leading-relaxed space-y-2">
-        <li>Automatic Apache setup</li>
-        <li>Automatic PHP + Composer installation</li>
-        <li>Environment variable manager</li>
-        <li>Access logs for each deployment</li>
-        <li>Secure GitHub OAuth login</li>
-    </ul>
+    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Monitor Your Deployments</h2>
+    <ol class="list-decimal ml-6 text-gray-700 leading-relaxed space-y-3">
+        <li>Keep taps of the setup from the Logs.</li>
+        <li>When it is succesful now Check Your Check Your Droplet  With The button Below .</li>
+        
+    </ol>
 
     <!-- Base64 Dummy Image -->
     <figure class="mt-6">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAH0CAYAAABq4i4gAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSoghodkVUcERRUUEG8igiAOOjoCMFVEsDIoK2AfkIaKOg6OIisr74Xuja9a89+bN/rXXPues852zzwfACAyWSDNRNYAMqUIeEeCDx8TG4eQuQIEKJHAAEAizZCFz/SMBAPh+PDwrIsAHvgABeNMLCADATZvAMByH/w/qQplcAYCEAcB0kThLCIAUAEB6jkKmAEBGAYCdmCZTAKAEAGDLY2LjAFAtAGAnf+bTAICd+Jl7AQBblCEVAaCRACATZYhEAGg7AKzPVopFAFgwABRmS8Q5ANgtADBJV2ZIALC3AMDOEAuyAAgMADBRiIUpAAR7AGDIIyN4AISZABRG8lc88SuuEOcqAAB4mbI8uSQ5RYFbCC1xB1dXLh4ozkkXKxQ2YQJhmkAuwnmZGTKBNA/g88wAAKCRFRHgg/P9eM4Ors7ONo62Dl8t6r8G/yJiYuP495gZ+YDqfw5sH6iYCJAe7TlDdBEOv4TVrDwyiBKBWIdFt9s5WtQfQ3p9RwD2rQv8zA1Z3n4AAAAAElFTkSuQmCC" 
-             alt="Key features panel"
-             class="rounded-lg shadow-lg w-full bg-amber-600 p-8">
+        <img src="{{ asset('images/docs/status.png')}}" 
+             alt="Deployment workflow"
+             class="rounded-lg shadow-lg w-full bg-green-600 p-8">
         <figcaption class="text-sm text-gray-500 text-center mt-2">
-            Feature overview inside the app
+            Step-by-step deployment flow
         </figcaption>
     </figure>
 </section>
 
-<!-- ====================== 4. Authentication ====================== -->
-<section class="mb-12">
-    <h2 class="text-2xl font-semibold text-gray-900 mb-3">4. Authentication</h2>
-    <p class="text-gray-700 leading-relaxed mb-4">
-        AquaPush uses GitHub as the authentication provider. Click the button below to
-        log in or create an account.
-    </p>
 
-    @if(!Auth::check())
-        <a href="{{ route('auth.redirect') }}"
-           class="inline-flex items-center bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-all duration-300">
-            Sign in with GitHub
-        </a>
-    @else
-        <a href="{{ route('dashboard') }}"
-           class="inline-flex items-center bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-all duration-300">
-            Go to Dashboard
-        </a>
-    @endif
+<!-- ====================== 2. How Deployment Works ====================== -->
+<section class="mb-12">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Deploy Your Laravel App</h2>
+    <ol class="list-decimal ml-6 text-gray-700 leading-relaxed space-y-3">
+        <li>After  Filling The Form A Submit.</li>
+        
+    </ol>
 
     <!-- Base64 Dummy Image -->
     <figure class="mt-6">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACu7K8IAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSoghodkVUcERRUUEG8igiAOOjoCMFVEsDIoK2AfkIaKOg6OIisr74Xuja9a89+bN/rXXPues852zzwfACAyWSDNRNYAMqUIeEeCDx8TG4eQuQIEKJHAAEAizZCFz/SMBAPh+PDwrIsAHvgABeNMLCADATZvAMByH/w/qQplcAYCEAcB0kThLCIAUAEB6jkKmAEBGAYCdmCZTAKAEAGDLY2LjAFAtAGAnf+bTAICd+Jl7AQBblCEVAaCRACATZYhEAGg7AKzPVopFAFgwABRmS8Q5ANgtADBJV2ZIALC3AMDOEAuyAAgMADBRiIUpAAR7AGDIIyN4AISZABRG8lc88SuuEOcqAAB4mbI8uSQ5RYFbCC1xB1dXLh4ozkkXKxQ2YQJhmkAuwnmZGTKBNA/g88wAAKCRFRHgg/P9eM4Ors7ONo62Dl8t6r8G/yJiYuP495gZ+YDqfw5sH6iYCJAe7TlDdBEOv4TVrDwyiBKBWIdFt9s5WtQfQ3p9RwD2rQv8zA1Z3n4AAAAAElFTkSuQmCC" 
-             alt="GitHub login button"
-             class="rounded-lg shadow-lg w-full max-w-md mx-auto bg-red-600 p-6">
+        <img src="{{ asset('images/docs/app.png')}}" 
+             alt="Deployment workflow"
+             class="rounded-lg shadow-lg w-full bg-green-600 p-8">
         <figcaption class="text-sm text-gray-500 text-center mt-2">
-            Login screen with GitHub OAuth
+            Step-by-step deployment flow
         </figcaption>
     </figure>
 </section>
+
+
+
+
+
+<!-- ====================== 2. How Deployment Works ====================== -->
+<section class="mb-12">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-3">Drople Page </h2>
+    <ol class="list-decimal ml-6 text-gray-700 leading-relaxed space-y-3">
+        <li>From The Droplet Page You Can  Create Or Deploy Your Laravel App .</li>
+        
+    </ol>
+
+    <figure class="mt-6">
+        <img src="{{ asset('images/docs/droplet.png')}}" 
+             alt="Deployment workflow"
+             class="rounded-lg shadow-lg w-full bg-green-600 p-8">
+        <figcaption class="text-sm text-gray-500 text-center mt-2">
+            Step-by-step deployment flow
+        </figcaption>
+    </figure>
+</section>
+
+
+
+
+<section class="mb-12">
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+        <div class="flex items-start">
+            <svg class="w-6 h-6 text-blue-500 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <h3 class="text-lg font-semibold text-blue-900 mb-2">View Your Deployed App</h3>
+                <p class="text-blue-800">
+                    Copy the IP address above and paste it into your browser's address bar to see your live application.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
 
 <!-- ====================== 5. Next Steps ====================== -->
-<section class="mb-12">
+<!--<section class="mb-12">
     <h2 class="text-2xl font-semibold text-gray-900 mb-3">5. Next Steps</h2>
     <ul class="list-disc ml-6 text-gray-700 leading-relaxed space-y-2">
         <li>Connect GitHub → Create new server</li>
         <li>Add your Laravel project repository</li>
         <li>Deploy using the AquaPush build pipeline</li>
         <li>Manage logs, environment variables, and workers</li>
-    </ul>
+    </ul>-->
 
     <!-- Base64 Dummy Image -->
-    <figure class="mt-6">
+    <!--<figure class="mt-6">
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAH0CAYAAABq4i4gAAAACXBIWXMAAAsTAAALEwEAmpwYAAAKT2lDQ1BQaG90b3Nob3AgSUNDIHByb2ZpbGUAAHjanVNnVFPpFj333vRCS4iAlEtvUhUIIFJCi4AUkSYqIQkQSoghodkVUcERRUUEG8igiAOOjoCMFVEsDIoK2AfkIaKOg6OIisr74Xuja9a89+bN/rXXPues852zzwfACAyWSDNRNYAMqUIeEeCDx8TG4eQuQIEKJHAAEAizZCFz/SMBAPh+PDwrIsAHvgABeNMLCADATZvAMByH/w/qQplcAYCEAcB0kThLCIAUAEB6jkKmAEBGAYCdmCZTAKAEAGDLY2LjAFAtAGAnf+bTAICd+Jl7AQBblCEVAaCRACATZYhEAGg7AKzPVopFAFgwABRmS8Q5ANgtADBJV2ZIALC3AMDOEAuyAAgMADBRiIUpAAR7AGDIIyN4AISZABRG8lc88SuuEOcqAAB4mbI8uSQ5RYFbCC1xB1dXLh4ozkkXKxQ2YQJhmkAuwnmZGTKBNA/g88wAAKCRFRHgg/P9eM4Ors7ONo62Dl8t6r8G/yJiYuP495gZ+YDqfw5sH6iYCJAe7TlDdBEOv4TVrDwyiBKBWIdFt9s5WtQfQ3p9RwD2rQv8zA1Z3n4AAAAAElFTkSuQmCC" 
              alt="Next steps wizard"
              class="rounded-lg shadow-lg w-full bg-indigo-600 p-8">
         <figcaption class="text-sm text-gray-500 text-center mt-2">
             Guided wizard after login
         </figcaption>
-    </figure>
+    </figure>-->
 </section>
 
 </div>

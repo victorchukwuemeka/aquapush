@@ -88,6 +88,12 @@ Route::get('/droplets/{droplet_id}/deployment-status', [DigitalOceanDropletContr
 Route::get('/droplets/{droplet_id}/status', [DigitalOceanDropletController::class, 'getDropletStatus'])->name('droplets.status');
 
 
+
+
+
+
+
+
      
 
 //this route deals with the laravel apps that is deployed on the droplet .
