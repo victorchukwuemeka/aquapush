@@ -46,7 +46,7 @@
                         </svg>
                         Sign in with GitHub
                     </a>
-                    <a href="#features" 
+                    <a href="{{ route('docs')}}" 
                        class="bg-white text-gray-700 py-4 px-10 rounded-xl border-2 border-gray-300 hover:border-red-600 hover:text-red-600 transition-all duration-300 font-semibold text-lg">
                         Learn More
                     </a>
@@ -100,7 +100,8 @@
                 </div>
                 <h3 class="font-bold text-2xl mb-3 text-gray-900">One-Click Deploy</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    Connect your GitHub repository and deploy instantly. Automated setup handles all the technical details for you.
+                    Connect your GitHub repository and deploy instantly. 
+                    Automated setup handles all the technical details for you.
                 </p>
             </div>
 
@@ -113,7 +114,8 @@
                 </div>
                 <h3 class="font-bold text-2xl mb-3 text-gray-900">Lightning Fast</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    Deploy your Laravel applications to DigitalOcean in minutes. Optimized infrastructure ensures peak performance.
+                    Deploy your Laravel applications to DigitalOcean in minutes. 
+                    Optimized infrastructure ensures peak performance.
                 </p>
             </div>
 
@@ -126,7 +128,8 @@
                 </div>
                 <h3 class="font-bold text-2xl mb-3 text-gray-900">Enterprise Security</h3>
                 <p class="text-gray-600 leading-relaxed">
-                    SSL certificates, secure database setup, and hardened server configurations included automatically.
+                    SSL certificates, secure database setup, 
+                    and hardened server configurations included automatically.
                 </p>
             </div>
         </div>
@@ -154,7 +157,8 @@
                     </div>
                     <div class="flex-grow pt-1">
                         <h3 class="text-2xl font-bold text-gray-900 mb-2">Connect Your GitHub</h3>
-                        <p class="text-gray-600 text-lg">Sign in with GitHub and select the Laravel repository you want to deploy.</p>
+                        <p class="text-gray-600 text-lg">Sign in with GitHub and select the Laravel
+                             repository you want to deploy.</p>
                     </div>
                 </div>
 

@@ -156,3 +156,7 @@ Route::get('/debug-env', function () {
 });
 
 
+
+Route::get('/documentation', function () {
+    return view('pages.docs');
+})->name('docs');

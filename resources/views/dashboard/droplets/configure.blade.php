@@ -5,7 +5,7 @@
         <!-- Header -->
         <div class="text-center mb-8">
             <h2 class="text-3xl font-bold text-gray-900 mb-2">Add GitHub Repository</h2>
-            <p class="text-gray-600">Deploy your repository to droplet {{ $droplet->name ?? $droplet->ip_address }}</p>
+            <p class="text-gray-600">Deploy your repository to droplet oooooooooooooooooo{{ $droplet->name ?? $droplet->ip_address }}</p>
         </div>
 
         <!-- Alert Messages -->
