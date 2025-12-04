@@ -1,5 +1,5 @@
 
-*  add the deployment tracker  
+
 * make the whole process secured 
 * talk about it on hacker news 
 * making   a video on product showcase 
