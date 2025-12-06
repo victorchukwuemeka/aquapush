@@ -1,5 +1,8 @@
 
 
+* try everything and fix each error you may find .
+
+
 * make the whole process secured 
 * talk about it on hacker news 
 * making   a video on product showcase 
@@ -22,6 +25,13 @@ feature of the admin
 * Manage site settings
 * Control access or permissions
 * View analytics or usage stats
+
+
+Payment integrations to look out for .
+* Lemon Squeezy
+* Gumroad
+* Payhip
+
 
 # currently working on the admin  it is where we will continue from next week .
 

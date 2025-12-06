@@ -15,7 +15,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use App\Events\DeploymentStatusUpdated;
 use App\Services\CloudInitService;
-
+use PhpParser\Node\Stmt\TryCatch;
 
 class  DigitalOceanDropletController extends Controller
 {   
@@ -80,7 +80,7 @@ class  DigitalOceanDropletController extends Controller
 
     /** handles the calling of the needed fuction for droplet creation */
     public function droplet_creation_composer(Request $request){
-        //try {
+        try {
             //dd($request);
             // Validate the incoming request data
             $validatedData = $this->validate_droplet_data($request);
@@ -106,7 +106,8 @@ class  DigitalOceanDropletController extends Controller
          
          //dd($validatedData['image']);
          //creating the droplet
-         $returned_droplet_id = $this->create_droplet(
+         //$returned_droplet_id 
+         $create_droplet_response = $this->create_droplet(
             $validatedData['api_token'],
             $validatedData['droplet_name'], 
             $validatedData['region'],
@@ -114,7 +115,19 @@ class  DigitalOceanDropletController extends Controller
             $validatedData['image'], 
             $sshFingerprint
          );
-         //dd($returned_droplet_id);
+
+         try {
+            //code...
+         } catch (\Throwable $th) {
+            //throw $th;
+         }
+
+         if (!$create_droplet_response['status'] == 'error') {
+            echo "Failed to create droplet: " . $create_droplet_response['message'] . PHP_EOL;
+         }elseif ($create_droplet_response['status'] === 'success') {
+            $returned_droplet_id = $create_droplet_response['droplet_id'];
+         }
+         
 
            // Step 6: Return success or failure
           if ($returned_droplet_id) {
@@ -127,12 +140,12 @@ class  DigitalOceanDropletController extends Controller
             // If droplet creation failed, show an error view.
             return view('dashboard.errors.deployment-error')->with('error', 'Failed to create droplet.');
           }
-       // } catch (\Throwable $th) {
+        } catch (\Throwable $th) {
             //throw $th;
             // Handle exceptions and log errors
-       //     Log::error('Droplet Deployment Error: ' . $th->getMessage());
-       //     return view('dashboard.errors.deployment-error')->with('error', 'An error occurred while deploying the droplet.');
-        //}
+            Log::error('Droplet Deployment Error: ' . $th->getMessage());
+            return view('dashboard.errors.deployment-error')->with('error', 'An error occurred while deploying the droplet.');
+        }
             //return redirect()->route('error-not-laravel');
         
     }
@@ -171,61 +184,120 @@ class  DigitalOceanDropletController extends Controller
 
     
     /** the actual creation of the droplet on digitalOcean */
-    public function create_droplet($apiToken, $dropletName, $region, $size, $image, $publicKey = null)
+    /**
+    * Create a Droplet on DigitalOcean with full error handling.
+    *
+    * @return array{status: string, droplet_id?: int, ip_address?: string, message?: string}
+    */
+    public function create_droplet(
+        string $apiToken, 
+        string $dropletName, 
+        string $region, 
+        string $size, 
+        string $image, 
+        ?string $publicKey = null
+    ):array
     {  
-        //dd($publicKey);
-        //dd($apiToken);
-        $sshFingerprint = null;
+        try {
 
-        // Check or add SSH key only if a public key is provided
-        if ($publicKey) {
-            $sshFingerprint = $this->get_or_add_ssh_key($apiToken, $publicKey);
-            //dd($sshFingerprint);
-        }
+            if (!$apiToken || !$dropletName || !$region || !$size || !$image) {
+                throw new \Exception("Missing required droplet parameters.");
+            }
 
-        $cloud_init_script = $this->cloud_init_service->generateCloudInitScript();
-        //dd($cloud_init_script);
+            //code...
+            $sshFingerprint = null;
+            
+            // Check or add SSH key only if a public key is provided
+            if ($publicKey) {
+                try {
+                    $sshFingerprint = $this->get_or_add_ssh_key($apiToken, $publicKey);
+                } catch (\Throwable $e) {
+                     throw new \Exception("Failed to process SSH key: " . $e->getMessage());
+                }
+            }
+            
 
-        // Prepare droplet creation payload
-        $payload = [
-            'name' => $dropletName,
-            'region' => $region,
-            'size' => $size,
-            'image' => $image, // Example: 'ubuntu-20-04-x64'
-            'backups' => false,
-            'user_data' => $cloud_init_script,
-        ];
+            //Creating our cloud init script 
+            try {
+                //code...
+                $cloud_init_script = $this->cloud_init_service->generateCloudInitScript();
+            } catch (\Throwable $e) {
+                 throw new \Exception("Failed to generate cloud-init script: " . $e->getMessage());
+            }
+            
 
-        // Add SSH keys to the payload only if a fingerprint exists
-        if ($sshFingerprint) {
-            $payload['ssh_keys'] = [$sshFingerprint];
-        }
 
-        // Create the droplet
-        $response = $this->client->post('https://api.digitalocean.com/v2/droplets', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $apiToken,
-                'Content-Type' => 'application/json',
-            ],
-            'json' => $payload,
-        ]);
+            // Prepare droplet creation payload
+            $payload = [
+                'name' => $dropletName,
+                'region' => $region,
+                'size' => $size,
+                'image' => $image, 
+                'backups' => false,
+                'user_data' => $cloud_init_script,
+            ];
+
+            // Add SSH keys to the payload only if a fingerprint exists
+            if ($sshFingerprint) {
+                $payload['ssh_keys'] = [$sshFingerprint];
+            }
+
+            try {
+                //code...
+                // Create the droplet
+                $response = $this->client->post('https://api.digitalocean.com/v2/droplets', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $apiToken,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => $payload,
+                ]);
         
+            } catch (\GuzzleHttp\Exception\ClientException $e) {
+                
+                $body = $e->getResponse()->getBody()->getContents();
+                throw new \Exception("DigitalOcean Client Error: " . $body);
+            } catch(\GuzzleHttp\Exception\ServerException  $e){
+                $body = $e->getResponse()->getBody()->getContents();
+                throw new \Exception("DigitalOcean Server Error: " . $body);
+            } catch(\Throwable $e){
+                throw new \Exception("Failed to send request to DigitalOcean: " . $e->getMessage());
+            }
+            
+
                       
-        //return the data of the droplet created.
-        $responseArray =  json_decode($response->getBody(), true); 
-        $droplet_id = $responseArray['droplet']['id'];
+            //return the data of the droplet created.
+            $responseArray =  json_decode($response->getBody(), true); 
+            if (!isset($responseArray['droplet']['id'])) {
+                throw new \Exception("Droplet creation failed: No droplet ID returned.");
+            }
+            $droplet_id = (int) $responseArray['droplet']['id'];
         
-        //dd($apiToken);
-        sleep(5);
-        $this->ip_address = $this->get_droplet_ip_address($droplet_id, $apiToken);
-        
-        //dd($this->ip_address);
-        //dd($responseArray['droplet']['id']);
-        if (isset($responseArray['droplet']['id'])) {
-            return $responseArray['droplet']['id'];
-        }else {
-            return null;
+            //dd($apiToken);
+            sleep(5);
+
+            try {
+                //code...
+                $this->ip_address = $this->get_droplet_ip_address($droplet_id, $apiToken);
+            } catch (\Throwable $e) {
+                throw new \Exception("Droplet created but failed to fetch IP address: " . $e->getMessage());
+            }
+
+            
+             /** --- Final Success --- */
+            return [
+                'status' => 'success',
+                'droplet_id' => $droplet_id,
+                'ip_address' => $this->ip_address
+            ];
+
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ];
         }
+       
     }
 
 
