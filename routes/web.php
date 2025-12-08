@@ -81,7 +81,10 @@ Route::get('droplets/index', [DigitalOceanDropletController::class, 'index'])
 Route::get('/digitalOcean/new/droplet/form', [DigitalOceanDropletController::class, 'form_for_droplet_creation'])
 ->middleware(GitHubAuthenticated::class)
 ->name('digitalocean-droplet.form');
+
+
 Route::post('/create/droplet', [DigitalOceanDropletController::class, 'droplet_creation_composer'])->name('create.droplet');
+
 //Route::get('/droplets/{droplet_id}/status', [DigitalOceanDropletController::class, 'getDropletStatus'])->name('droplets.status');
 Route::get('/droplets/{droplet_id}/deployment-status', [DigitalOceanDropletController::class, 'showDeploymentStatus'])->name(
      'droplets.deployment.status');

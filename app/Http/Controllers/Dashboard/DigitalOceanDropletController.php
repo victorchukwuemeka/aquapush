@@ -57,8 +57,10 @@ class  DigitalOceanDropletController extends Controller
     // Available images for your vm 
     private $images = [
         'ubuntu-22-04-x64' => 'Ubuntu 22.04 (x64)',
-        'rockylinux-8-x64' => 'Rocky Linux 8 (x64)',
-        'debian-11-x64' => 'Debian 11 (x64)',
+        'ubuntu-22-04-x64' => 'Ubuntu 22.04 (x64)',
+        'ubuntu-22-04-x64' => 'Ubuntu 22.04 (x64)',
+        //'rockylinux-8-x64' => 'Rocky Linux 8 (x64)',
+        //'debian-11-x64' => 'Debian 11 (x64)',
     ];
      
     /**takes you to the page where you fill the form for droplet creation */
@@ -81,6 +83,7 @@ class  DigitalOceanDropletController extends Controller
     /** handles the calling of the needed fuction for droplet creation */
     public function droplet_creation_composer(Request $request){
         try {
+            
             //dd($request);
             // Validate the incoming request data
             $validatedData = $this->validate_droplet_data($request);
@@ -116,11 +119,7 @@ class  DigitalOceanDropletController extends Controller
             $sshFingerprint
          );
 
-         try {
-            //code...
-         } catch (\Throwable $th) {
-            //throw $th;
-         }
+         
 
          if (!$create_droplet_response['status'] == 'error') {
             echo "Failed to create droplet: " . $create_droplet_response['message'] . PHP_EOL;
@@ -385,7 +384,13 @@ class  DigitalOceanDropletController extends Controller
      * function used for validating the request, from the 
      * droplet creation  form.
      */
-    private function validate_droplet_data($data){
+    private function validate_droplet_data(Request $data){
+        
+        //for the space issue let me sanitize the the droplet_name
+        $data->merge([
+            'droplet_name' => strtolower(str_replace(' ','', $data->droplet_name)),
+        ]);
+
         return $data->validate([
             'api_token' => 'required|string',
             'ssh_key' => 'required|string',

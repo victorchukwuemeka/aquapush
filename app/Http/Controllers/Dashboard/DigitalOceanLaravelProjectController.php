@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\DigitalOceanDroplet;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
 
 class DigitalOceanLaravelProjectController extends Controller
 {
@@ -38,54 +40,60 @@ class DigitalOceanLaravelProjectController extends Controller
 
 
      // Add GitHub repository to droplet
-     public function add_repo_to_droplet(Request $request)
-     {   
-        
-        // 1. Check billing first
-        /*if (!auth()->user()->is_subscribed) {
+     public function add_repo_to_droplet(Request $request){
+        try {
+
+            // 1. Check billing first
+            /*if (!auth()->user()->is_subscribed) {
+                return redirect()
+                ->route('billing.show')
+                ->with('error', 'Please subscribe before deploying your repository.');
+            }*/
+            
+            //i have to sanitized what am adding
+            $input = $request->only([
+                "droplet_ip",
+                "repo_url",
+                "db_name",
+                "db_user",
+                "db_password"
+            ]);
+            $input = array_map('trim', $input);
+            $input = array_map('htmlspecialchars', $input);
+
+            $api_key = 'YOUR_SECRET_KEY';
+
+            $response = Http::withHeaders([
+                'X-API-KEY' => $api_key,
+            ])->post("http://{$request->droplet_ip}/install.php", [
+                'repo' => $request->repo_url,
+                'db_name' => $request->db_name,      
+                'db_user' => $request->db_user,      
+                'db_pass' => $request->db_pass,
+            ]);
+            
+            if ($response->failed()) {
+                return redirect()
+                ->back()
+                ->with(
+                    'error', 'Failed to add repository.
+                     Please check your droplet or API.'
+                );
+            }
             return redirect()
-              ->route('billing.show')
-              ->with('error', 'Please subscribe before deploying your repository.');
-        }*/
+            ->route('droplets.index')
+            ->with('success', 'Repository added successfully!');
 
-         
-         //dd($request->droplet_ip);
-         $request->validate([
-             'droplet_ip' => 'required|ip',
-             'repo_url' => 'required|url',
-             'db_name' => 'required|string',
-             'db_user' => 'required|string', 
-             'db_pass' => 'required|string',
-         ]);
-
-         $api_key = 'YOUR_SECRET_KEY';
- 
-         $response = Http::withHeaders([
-             'X-API-KEY' => $api_key, // Use X-API-KEY header
-         ])->post("http://{$request->droplet_ip}/install.php", [
-             'repo' => $request->repo_url,
-             'db_name' => $request->db_name,      
-             'db_user' => $request->db_user,      
-             'db_pass' => $request->db_pass,
-         ]);
-         
-          //log the error 
-          /*Log::error("droplet api response", [
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'headers' => $response->headers(),
-          ]);*/
-
-          //dd($response->status(), $response->body());
-
-
-
-         if ($response->failed()) {
-             return response()->json(['error' => 'Failed to add repository'], 500);
-         }
-  
-         return response()->json($response->json());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()
+            ->back()->withErrors($e->errors())
+            ->withInput();
+        } catch(\Exception  $e){
+            Log::error('Droplet API error', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            ]);
+        }
      }
-
 
 }
