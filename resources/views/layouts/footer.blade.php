@@ -39,7 +39,7 @@
                 <ul class="space-y-3">
                     <li><a href="#features" class="hover:text-red-500 transition-colors duration-200">Features</a></li>
                     <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Pricing</a></li>-->
-                    <li><a href="#" class="hover:text-red-500 transition-colors duration-200">Documentation</a></li>
+                    <li><a href="{{ route('docs')}}" class="hover:text-red-500 transition-colors duration-200">Documentation</a></li>
                     <!--<li><a href="#" class="hover:text-red-500 transition-colors duration-200">Changelog</a></li>-->
                 </ul>
             </div>
