@@ -40,9 +40,11 @@ class LoginController extends Controller
     
     public function handleGitHubCallBack(Request $request)
     {     
-         //dd('victorsssss');
-        // $githubUser = Socialite::driver('github')->user();
-        $githubUser = Socialite::driver('github')->stateless()->user();
+        
+       try { 
+
+         $githubUser = Socialite::driver('github')->stateless()->user();
+         //$githubUser = Socialite::driver('github')->user();
 
         // Ensure email and name are always present
         $email = $githubUser->getEmail();
@@ -50,8 +52,6 @@ class LoginController extends Controller
         $avatar = $githubUser->getAvatar() ?? 'default-avatar.png';
         $token = encrypt($githubUser->token);
         $refreshToken = $githubUser->refreshToken ? encrypt($githubUser->refreshToken) : null;
-        
-      // try { 
             
             //check if user exist
             $user = User::where('github_id', $githubUser->id)->first();
@@ -94,10 +94,10 @@ class LoginController extends Controller
                 }
             }
             return redirect()->route('dashboard');
-       // } catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('GitHub login failed: ' . $e->getMessage());
             return redirect()->route("login-error")->with('error', 'Unable  futo login with GitHub.');
-       // }
+        }
     }
 
     // --- Google ---
