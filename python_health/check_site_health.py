@@ -7,7 +7,21 @@ import smtplib
 from email.message import EmailMessage
 
 # Load environment variables
-LARAVEL_ENV_PATH = '/home/victor/odinala/aquaPush/.env'  
+possible_paths = [
+    '/var/www/html/aquapush/shared/.env',
+    '/var/www/html/aquapush/current/.env',
+    '/home/victor/odinala/aquaPush/.env',
+]
+LARAVEL_ENV_PATH = None
+
+for path in possible_paths:
+    if os.path.exists(path):
+        LARAVEL_ENV_PATH = path
+
+if not LARAVEL_ENV_PATH:
+    raise FileNotFoundError("Could not find .env file")
+
+
 load_dotenv(dotenv_path=LARAVEL_ENV_PATH)
 
 # Database configuration

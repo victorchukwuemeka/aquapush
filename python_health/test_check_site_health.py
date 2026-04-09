@@ -4,9 +4,6 @@ import mysql.connector
 import smtplib
 from email.message import EmailMessage
 
-# Load environment variables
-LARAVEL_ENV_PATH = '/home/victor/odinala/aquaPush/.env' 
-
 
 possible_paths = [
     '/var/www/html/aquapush/shared/.env',
@@ -28,6 +25,7 @@ if not LARAVEL_ENV_PATH:
 
 
 load_dotenv(dotenv_path=LARAVEL_ENV_PATH)
+
 
 def test_env_variables():
     
